@@ -1,0 +1,22 @@
+.wrapper{
+    min-width: 100px;
+    border-radius: 4px;
+    font-weight: 700;
+    padding: 9px 8px;
+    background-color: var(--white);
+    user-select: none;
+    // pointer-events: none;
+    // opacity: 0.5;
+}
+.primary{
+    background-color: var(--color-main);
+    &:hover {
+        background-color: var(--color-main-hover);
+    }
+}
+
+
+
+.btn{
+    color: var(--white);
+}

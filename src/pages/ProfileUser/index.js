@@ -161,7 +161,7 @@ function ProfileUser() {
                                         <p className="font-bold text-xl">{challenge.nameChallenge}</p>
                                         <p className="text-sm text-gray-500">{challenge.field}</p>
                                         <p className="text-sm text-blue-500">{challenge.participants} người tham gia</p>
-                                        <video src={challenge.userVideo} controls className="w-full h-[200px] mt-2 rounded-lg"></video>
+                                        <video src={challenge.userVideo} loading="lazy" controls className="w-full h-[200px] mt-2 rounded-lg"></video>
                                         <p className="text-gray-600 mt-2">Mô tả: {challenge.userDescribe}</p>
                                     </div>
                                 </Link>

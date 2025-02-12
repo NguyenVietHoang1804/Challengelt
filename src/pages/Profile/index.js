@@ -368,7 +368,7 @@ const Profile = () => {
                 </Tippy>
             </div>
             <div className="flex items-center">
-                <img src={imgUserPreview} alt="imgUser" width={100} height={100} className="rounded-full" />
+                <img src={imgUserPreview} alt="imgUser" width={100} height={100} loading="lazy" className="rounded-full" />
                 <h1 className="text-5xl font-bold ml-4">{userData.displayName}</h1>
             </div>
 
@@ -620,6 +620,7 @@ const Profile = () => {
                                                     src={challenge.userVideo}
                                                     controls
                                                     className="min-w-[300px] h-[200px] mt-2 rounded-lg"
+                                                    loading="lazy"
                                                 ></video>
                                                 <p className="text-gray-600 mt-2">Mô tả: {challenge.userDescribe}</p>
                                             </div>

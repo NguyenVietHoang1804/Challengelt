@@ -1,6 +1,6 @@
 'use client';
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { databases, storage, account, Query,ID } from '~/appwrite/config';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { databases, storage, account, Query, ID } from '~/appwrite/config';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDebounce } from '~/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -32,20 +32,21 @@ function Admin() {
     const debouncedSearchChallenge = useDebounce(searchChallenge, 700);
     const debouncedSearchVideo = useDebounce(searchVideo, 700);
 
+    const [selectedField, setSelectedField] = useState('Tất cả');
+
     useEffect(() => {
         const checkAdmin = async () => {
             try {
                 const user = await account.get();
-                if (user.labels && user.labels.includes('admin')) {
+                if (user.labels?.includes('admin')) {
                     setIsAdmin(true);
                 } else {
-                    navigate('/'); // Nếu không phải admin, chuyển hướng về trang chủ
+                    navigate('/');
                 }
             } catch {
                 navigate('/');
             }
         };
-
         checkAdmin();
     }, [navigate]);
 
@@ -124,12 +125,10 @@ function Admin() {
         }
     }, [activeTab, debouncedSearchVideo, fetchVideos]);
 
-    // Xử lý chuyển trang
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
 
-    // Tính toán dữ liệu phân trang
     const getPaginatedData = (data) => {
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
@@ -141,20 +140,56 @@ function Admin() {
         return Array.from({ length: totalPages }, (_, index) => index + 1);
     };
 
-    // Xóa người dùng
-    const handleDeleteUser = async (userId) => {
+    const handleDeleteUser =useCallback( async (userId) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
         try {
+            // 1. Xóa tất cả thử thách mà người dùng đã tạo
+            const createdChallenges = await databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', [
+                Query.equal('idUserCreated', userId),
+            ]);
+            
+            await Promise.all(createdChallenges.documents.map(async (challenge) => {
+                if (challenge.fileImgId) {
+                    await storage.deleteFile('678a12cf00133f89ab15', challenge.fileImgId);
+                }
+                
+                const joinedResponse = await databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
+                    Query.equal('challengeId', challenge.$id),
+                ]);
+                
+                await Promise.all(joinedResponse.documents.map(async (entry) => {
+                    if (entry.fileId) {
+                        await storage.deleteFile('678a12cf00133f89ab15', entry.fileId);
+                    }
+                    await databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', entry.$id);
+                }));
+
+                await databases.deleteDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', challenge.$id);
+            }));
+
+            // 2. Xóa tất cả video mà người dùng đã đăng tải
+            const userVideos = await databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
+                Query.equal('idUserJoined', userId),
+            ]);
+
+            await Promise.all(userVideos.documents.map(async (video) => {
+                if (video.fileId) {
+                    await storage.deleteFile('678a12cf00133f89ab15', video.fileId);
+                }
+                await databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', video.$id);
+            }));
+
+            // 3. Cuối cùng, xóa người dùng khỏi hệ thống
             await databases.deleteDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId);
+
             setUsers((prev) => prev.filter((user) => user.$id !== userId));
-            alert('Xóa người dùng thành công.');
+            alert('Xóa người dùng và toàn bộ dữ liệu liên quan thành công.');
         } catch (error) {
             console.error('Lỗi khi xóa người dùng:', error);
         }
-    };
+    },[]);
 
-    // Xóa thử thách và toàn bộ dữ liệu liên quan
-    const handleDeleteChallenge = async (challenge) => {
+    const handleDeleteChallenge =useCallback( async (challenge) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa thử thách này và toàn bộ dữ liệu liên quan?')) return;
 
         try {
@@ -163,45 +198,37 @@ function Admin() {
                 return;
             }
 
-            // 🔹 1. Xóa hình ảnh thử thách trong Storage nếu có
             if (challenge.fileImgId) {
                 await storage.deleteFile('678a12cf00133f89ab15', challenge.fileImgId);
             }
 
-            // 🔹 2. Kiểm tra và lấy danh sách người tham gia thử thách từ "joinedChallenges"
             const joinedResponse = await databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
                 Query.equal('challengeId', challenge.$id),
             ]);
 
             if (joinedResponse && joinedResponse.documents.length > 0) {
-                // 🔹 3. Xóa tất cả video của người tham gia
                 await Promise.all(
                     joinedResponse.documents.map(async (entry) => {
                         if (entry.fileId) {
-                            await storage.deleteFile('678a12cf00133f89ab15', entry.fileId); // Xóa video trong Storage
+                            await storage.deleteFile('678a12cf00133f89ab15', entry.fileId);
                         }
-                        await databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', entry.$id); // Xóa dữ liệu tham gia
+                        await databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', entry.$id);
                     }),
                 );
             }
 
-            // 🔹 4. Xóa thử thách trong collection "challenges"
             await databases.deleteDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', challenge.$id);
-
-            // 🔹 5. Cập nhật UI: Loại bỏ thử thách khỏi danh sách hiển thị
             setChallenges((prev) => prev.filter((c) => c.$id !== challenge.$id));
-
             alert('Xóa thử thách và tất cả dữ liệu liên quan thành công.');
         } catch (error) {
             console.error('Lỗi khi xóa thử thách:', error);
         }
-    };
+    },[]);
 
-    // Sửa thông tin thử thách
-    const handleEditChallenge = (challenge) => {
+    const handleEditChallenge =useCallback( (challenge) => {
         setEditChallenge(challenge);
         setPreviewImage(challenge.imgChallenge);
-    };
+    },[]);
 
     const handleSaveEditChallenge = async () => {
         if (!editChallenge) return;
@@ -236,39 +263,55 @@ function Admin() {
         }
     };
 
-    // Xóa video
-    const handleDeleteVideo = async (video) => {
+    const handleDeleteVideo =useCallback( async (video) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa video này?')) return;
-    
+
         try {
             // 1. Xóa video khỏi Storage
             if (video.fileId) {
                 await storage.deleteFile('678a12cf00133f89ab15', video.fileId);
             }
-    
+
             // 2. Xóa dữ liệu tham gia thử thách trong collection "joinedChallenges"
             await databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', video.$id);
-    
+
             // 3. Giảm số lượng người tham gia trong collection "challenges"
-            const challengeData = await databases.getDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', video.challengeId);
+            const challengeData = await databases.getDocument(
+                '678a0e0000363ac81b93',
+                '678a0fc8000ab9bb90be',
+                video.challengeId,
+            );
             const updatedParticipants = Math.max((challengeData.participants || 1) - 1, 0);
-    
+
             await databases.updateDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', video.challengeId, {
                 participants: updatedParticipants,
             });
-    
+
             // 4. Trừ điểm của người tham gia và chủ thử thách
-            const userJoined = await databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', video.idUserJoined);
-            const challengeOwner = await databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', challengeData.idUserCreated);
-    
+            const userJoined = await databases.getDocument(
+                '678a0e0000363ac81b93',
+                '678a207f00308710b3b2',
+                video.idUserJoined,
+            );
+            const challengeOwner = await databases.getDocument(
+                '678a0e0000363ac81b93',
+                '678a207f00308710b3b2',
+                challengeData.idUserCreated,
+            );
+
             await databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', video.idUserJoined, {
                 points: Math.max((userJoined.points || 5) - 5, 0),
             });
-    
-            await databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', challengeData.idUserCreated, {
-                points: Math.max((challengeOwner.points || 5) - 5, 0),
-            });
-    
+
+            await databases.updateDocument(
+                '678a0e0000363ac81b93',
+                '678a207f00308710b3b2',
+                challengeData.idUserCreated,
+                {
+                    points: Math.max((challengeOwner.points || 5) - 5, 0),
+                },
+            );
+
             // 5. Gửi thông báo đến chủ thử thách
             await databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
                 userId: challengeData.idUserCreated,
@@ -276,7 +319,7 @@ function Admin() {
                 challengeId: video.challengeId,
                 createdAt: new Date().toISOString(),
             });
-    
+
             // 6. Cập nhật UI sau khi xóa video
             setVideos((prev) => prev.filter((v) => v.$id !== video.$id));
             alert('Xóa video thành công và cập nhật thử thách.');
@@ -284,8 +327,7 @@ function Admin() {
             console.error('Lỗi khi xóa video:', error);
             alert('Xóa video thất bại. Vui lòng thử lại.');
         }
-    };
-    
+    },[]);
 
     const handleClear = () => {
         setSearchUser('');
@@ -293,6 +335,11 @@ function Admin() {
         setSearchVideo('');
         inputRef.current.focus();
     };
+
+    const filteredChallenges = useMemo(() => {
+        if (selectedField === 'Tất cả') return challenges;
+        return challenges.filter((challenge) => challenge.field === selectedField);
+    }, [challenges, selectedField]);
 
     if (!isAdmin) {
         return <p className="text-center text-red-500">Bạn không có quyền truy cập trang này.</p>;
@@ -327,7 +374,9 @@ function Admin() {
                     Quản lý Thử Thách
                 </button>
                 <button
-                    className={`px-4 py-2 rounded ${activeTab === 'videos' ? 'bg-[#f86666] text-white' : 'bg-gray-200'}`}
+                    className={`px-4 py-2 rounded ${
+                        activeTab === 'videos' ? 'bg-[#f86666] text-white' : 'bg-gray-200'
+                    }`}
                     onClick={() => {
                         setActiveTab('videos');
                         fetchVideos();
@@ -482,13 +531,33 @@ function Admin() {
                                     </button>
                                 )}
                             </div>
+                            <div className="mb-4">
+                                <label className="block text-gray-700 font-bold mb-2">Lọc theo lĩnh vực:</label>
+                                <select
+                                    value={selectedField}
+                                    onChange={(e) => {setSelectedField(e.target.value);setCurrentPage(1);}}
+                                    className="w-full border border-gray-300 rounded p-2"
+                                >
+                                    <option value="Tất cả">Tất cả</option>
+                                    <option value="Thể thao">Thể thao</option>
+                                    <option value="Đời sống">Đời sống</option>
+                                    <option value="Học tập">Học tập</option>
+                                    <option value="Nấu ăn">Nấu ăn</option>
+                                    <option value="Sáng tạo">Sáng tạo</option>
+                                    <option value="Nghệ thuật">Nghệ thuật</option>
+                                    <option value="Kinh doanh">Kinh doanh</option>
+                                    <option value="Khoa học">Khoa học</option>
+                                    <option value="Văn hóa">Văn hóa</option>
+                                </select>
+                            </div>
                             <ul lassName="space-y-4 mt-2">
-                                {getPaginatedData(challenges).map((challenge) => (
+                                {getPaginatedData(filteredChallenges).map((challenge) => (
                                     <li key={challenge.$id} className="flex relative bg-gray-100 p-4 rounded-lg shadow">
                                         <img
                                             src={challenge.imgChallenge || 'https://via.placeholder.com/100'}
                                             alt="Thử thách"
                                             className="mr-5 w-[200px] h-[95px] object-cover rounded"
+                                            loading="lazy"
                                         />
                                         <div>
                                             <p className="font-bold">
@@ -591,6 +660,7 @@ function Admin() {
                                             src={video.videoURL}
                                             controls
                                             className="w-[250px] h-[150px] mr-3 mt-2"
+                                            loading="lazy"
                                         ></video>
                                         <div className="mt-2">
                                             <p className="font-bold">
@@ -630,4 +700,4 @@ function Admin() {
     );
 }
 
-export default Admin;
+export default React.memo(Admin);

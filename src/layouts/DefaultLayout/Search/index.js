@@ -6,7 +6,7 @@ import SearchItem from '~/components/SearchItem';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames/bind';
 import styles from './Search.module.scss';
-import { useEffect, useState, useRef } from 'react';
+import React , { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useDebounce } from '~/hooks';
 import { databases,Query } from '~/appwrite/config';
 import { useNavigate } from 'react-router-dom';
@@ -23,20 +23,19 @@ function Search() {
     const navigate = useNavigate();
 
 
-    const handleClear = () => {
+    const handleClear = useCallback(() => {
         setSearchValue('');
         setSearchResult([]);
         inputRef.current.focus();
-    };
+    }, []);
 
-    const handleHideResult = () => {
+    const handleHideResult = useCallback(() => {
         setShowResult(false);
-    };
+    }, []);
 
-    const handleSelectItem = () => {
-        // Khi người dùng bấm vào thử thách hoặc tài khoản => Ẩn Tippy
+    const handleSelectItem = useCallback(() => {
         setShowResult(false);
-    };
+    }, []);
 
     useEffect(() => {
         const fetchSearchResults = async () => {
@@ -48,17 +47,16 @@ function Search() {
             setLoading(true);
 
             try {
-                const accountResponse = await databases.listDocuments(
-                    '678a0e0000363ac81b93',
-                    '678a207f00308710b3b2',
-                    [Query.contains('displayName', debounce), Query.limit(3)]
-                );
-
-                const challengeResponse = await databases.listDocuments(
-                    '678a0e0000363ac81b93',
-                    '678a0fc8000ab9bb90be',
-                    [Query.contains('nameChallenge', debounce), Query.limit(5)]
-                );
+                const [accountResponse, challengeResponse] = await Promise.all([
+                    databases.listDocuments('678a0e0000363ac81b93', '678a207f00308710b3b2', [
+                        Query.contains('displayName', debounce),
+                        Query.limit(3),
+                    ]),
+                    databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', [
+                        Query.contains('nameChallenge', debounce),
+                        Query.limit(5),
+                    ]),
+                ]);
 
                 setSearchResult([
                     ...accountResponse.documents.map((doc) => ({
@@ -82,12 +80,15 @@ function Search() {
         fetchSearchResults();
     }, [debounce]);
 
-    const handleSearchSubmit = () => {
+    const handleSearchSubmit = useCallback(() => {
         if (searchValue.trim()) {
             navigate(`/search?query=${encodeURIComponent(searchValue)}`);
-            setShowResult(false); // Ẩn kết quả gợi ý khi chuyển trang
+            setShowResult(false);
         }
-    };
+    }, [searchValue, navigate]);
+
+    const filteredChallengeResult = useMemo(() => searchResult.slice(0, 5), [searchResult]);
+    const filteredAccountResult = useMemo(() => searchResult.slice(0, 3), [searchResult]);
 
     return (
         <Tippy
@@ -97,18 +98,16 @@ function Search() {
                 <div className={cx('search-result')} tabIndex="-1" {...attr}>
                     <PopperWrapper>
                         <h4 className={cx('search-title')}>Thử thách</h4>
-                        {searchResult
+                        {filteredChallengeResult
                             .filter((result) => result.type === 'challenge')
-                            .slice(0, 5)
                             .map((result) => (
                                 <div key={result.id} onClick={handleSelectItem}>
                                     <SearchItem data={result.data} />
                                 </div>
                             ))}
                         <h4 className={cx('search-title')}>Tài khoản</h4>
-                        {searchResult
+                        {filteredAccountResult
                             .filter((result) => result.type === 'account')
-                            .slice(0, 3)
                             .map((result) => (
                                 <div key={result.id} onClick={handleSelectItem}>
                                     <AccountItem data={result.data} />
@@ -145,4 +144,4 @@ function Search() {
     );
 }
 
-export default Search;
+export default React.memo(Search);

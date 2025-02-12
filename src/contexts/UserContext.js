@@ -12,14 +12,12 @@ const UserProvider = ({ children }) => {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                // Lấy thông tin người dùng từ Auth
                 const user = await account.get();
                 setUserId(user.$id);
-                // Lấy thông tin bổ sung từ collection `users`
                 const userDocument = await databases.getDocument(
-                    '678a0e0000363ac81b93', // Database ID
-                    '678a207f00308710b3b2', // Collection ID
-                    user.$id // Document ID trùng với User ID
+                    '678a0e0000363ac81b93', 
+                    '678a207f00308710b3b2', 
+                    user.$id 
                 );
                 setDisplayName(userDocument.displayName);
             } catch {
@@ -29,7 +27,6 @@ const UserProvider = ({ children }) => {
                 setLoading(false);
             }
         };
-
         fetchUserData();
     }, []);
 
@@ -37,7 +34,6 @@ const UserProvider = ({ children }) => {
         setUserId(id);
         setDisplayName(name);
     };
-
     return (
         <UserContext.Provider value={{ userId, displayName, setUserId: updateUserContext, setDisplayName }}>
             {!loading && children}

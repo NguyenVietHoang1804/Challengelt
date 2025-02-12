@@ -55,6 +55,7 @@ function Home() {
                             className="rounded-lg mb-4 w-[300px] h-[200px] object-cover"
                             src={challenge.imgChallenge || 'https://via.placeholder.com/300x200'}
                             alt={challenge.nameChallenge || `Thử thách ${challenge.$id}`}
+                            loading='lazy'
                         />
 
                         <h3 className="text-4xl font-bold mb-3">

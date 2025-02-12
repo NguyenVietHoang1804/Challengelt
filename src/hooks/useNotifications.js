@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { client, databases, Query } from '~/appwrite/config';
 import { UserContext } from '~/contexts/UserContext';
 
@@ -6,26 +6,23 @@ const useNotifications = () => {
     const { userId } = useContext(UserContext);
     const [notifications, setNotifications] = useState([]);
 
-    useEffect(() => {
+    const fetchNotifications = useCallback(async () => {
         if (!userId) return;
+        try {
+            const response = await databases.listDocuments(
+                '678a0e0000363ac81b93',
+                'notifications',
+                [Query.equal('userId', userId), Query.orderDesc('createdAt')]
+            );
+            setNotifications(response.documents);
+        } catch (error) {
+            console.error('Lỗi khi lấy thông báo:', error);
+        }
+    }, [userId]);
 
-        // 🟢 Lấy danh sách thông báo từ database
-        const fetchNotifications = async () => {
-            try {
-                const response = await databases.listDocuments(
-                    '678a0e0000363ac81b93',
-                    'notifications',
-                    [Query.equal('userId', userId), Query.orderDesc('createdAt')]
-                );
-                setNotifications(response.documents);
-            } catch (error) {
-                console.error('Lỗi khi lấy thông báo:', error);
-            }
-        };
-
+    useEffect(() => {
         fetchNotifications();
 
-        // 🔴 Đăng ký realtime để lắng nghe thông báo mới
         const unsubscribe = client.subscribe(
             'databases.678a0e0000363ac81b93.collections.notifications.documents',
             (response) => {
@@ -38,12 +35,12 @@ const useNotifications = () => {
             }
         );
 
-        return () => {
-            unsubscribe(); // Hủy đăng ký khi component bị unmount
-        };
-    }, [userId]);
+        return () => unsubscribe();
+    }, [fetchNotifications, userId]);
 
-    return { notifications };
+    const memoizedNotifications = useMemo(() => notifications, [notifications]);
+
+    return { notifications: memoizedNotifications };
 };
 
 export default useNotifications;

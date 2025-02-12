@@ -98,7 +98,14 @@ function Explore() {
                         <ul className="mt-2">
                             {popularChallenges.length > 0 ? (
                                 popularChallenges.map((challenge) => (
-                                    <Link to={`/challenge/${challenge.$id}`}><li className="py-2 hover:bg-gray-200 w-full cursor-pointer text-blue-500 " key={challenge.$id}>{challenge.nameChallenge}</li></Link>
+                                    <Link to={`/challenge/${challenge.$id}`}>
+                                        <li
+                                            className="py-2 hover:bg-gray-200 w-full cursor-pointer text-blue-500 "
+                                            key={challenge.$id}
+                                        >
+                                            {challenge.nameChallenge}
+                                        </li>
+                                    </Link>
                                 ))
                             ) : (
                                 <p>Không có thử thách phổ biến</p>
@@ -110,7 +117,14 @@ function Explore() {
                         <ul className="mt-2">
                             {newestChallenges.length > 0 ? (
                                 newestChallenges.map((challenge) => (
-                                    <Link to={`/challenge/${challenge.$id}`}><li className="py-2 hover:bg-gray-200 w-full cursor-pointer text-blue-500 " key={challenge.$id}>{challenge.nameChallenge}</li></Link>
+                                    <Link to={`/challenge/${challenge.$id}`}>
+                                        <li
+                                            className="py-2 hover:bg-gray-200 w-full cursor-pointer text-blue-500 "
+                                            key={challenge.$id}
+                                        >
+                                            {challenge.nameChallenge}
+                                        </li>
+                                    </Link>
                                 ))
                             ) : (
                                 <p>Không có thử thách mới</p>
@@ -170,7 +184,14 @@ function Explore() {
                             <>
                                 <ul>
                                     {filteredChallenges.slice(0, visibleChallenges).map((challenge) => (
-                                        <Link to={`/challenge/${challenge.$id}`}><li className="py-2 hover:bg-gray-200 w-full cursor-pointer border-b" key={challenge.$id}>{challenge.nameChallenge}</li></Link>
+                                        <Link to={`/challenge/${challenge.$id}`}>
+                                            <li
+                                                className="py-2 hover:bg-gray-200 w-full cursor-pointer border-b"
+                                                key={challenge.$id}
+                                            >
+                                                {challenge.nameChallenge}
+                                            </li>
+                                        </Link>
                                     ))}
                                 </ul>
                                 <div className="flex space-x-2 mt-2">
@@ -206,13 +227,17 @@ function Explore() {
                                     {filteredVideos.slice(0, visibleVideos).map((video) => (
                                         <Link to={`/challenge/${video.challengeId}`}>
                                             <div key={video.$id} className="p-2 border rounded-lg shadow-md">
-                                                <p className="font-bold text-center">Người đăng: {video.uploaderName}</p>
+                                                <p className="font-bold text-center">
+                                                    Người đăng: {video.uploaderName}
+                                                </p>
                                                 <video
                                                     width={250}
                                                     height={350}
                                                     src={video.videoURL}
                                                     controls
                                                     className="rounded-lg mb-2 mx-auto"
+                                                    loading="lazy"
+                                                    
                                                 ></video>
                                                 <p className="text-gray-700 ">Thử thách: {video.challengeName}</p>
                                                 <p className="text-xl text-gray-700">Lĩnh vực: {video.field}</p>

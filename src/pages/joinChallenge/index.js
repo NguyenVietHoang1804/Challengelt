@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -30,25 +30,22 @@ function JoinChallenge() {
         fetchChallenge();
     }, [id]);
 
-    const handleDelete = () => {
-        if (!videoFile && !describe) {
-            return;
-        }
+    const handleDelete = useCallback(() => {
         setVideoFile(null);
         setVideoPreview(null);
         setDescribe('');
         setInputKey(Date.now());
-    };
+    }, []);
 
-    const handleFileChange = (e) => {
+    const handleFileChange = useCallback((e) => {
         const file = e.target.files[0];
         if (file) {
             setVideoFile(file);
             setVideoPreview(URL.createObjectURL(file)); // Xem trước video
         }
-    };
+    }, []);
 
-    const handlePost = async () => {
+    const handlePost = useCallback(async () => {
         if (!userId || !displayName) {
             alert('Bạn cần đăng nhập để tham gia thử thách.');
             return;
@@ -103,8 +100,8 @@ function JoinChallenge() {
                     points: newPoints,
                 });
             };
-    
-            await addPoints(userId);  // Cộng điểm cho người tham gia
+
+            await addPoints(userId); // Cộng điểm cho người tham gia
             if (ownerId) {
                 await addPoints(ownerId); // Cộng điểm cho chủ thử thách
             }
@@ -125,7 +122,7 @@ function JoinChallenge() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [userId, displayName, videoFile, describe, challenge, navigate, id]);
 
     if (!challenge) {
         return <p>Đang tải thông tin thử thách...</p>;
@@ -135,7 +132,7 @@ function JoinChallenge() {
         <div className="bg-gray-100 mt-6 mb-32 flex items-center justify-center min-h-screen">
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl">
                 <button onClick={() => navigate(-1)} className="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg">
-                    Quay lại
+                    {`< Quay lại`}
                 </button>
                 <div>
                     <h1 className="text-6xl font-bold text-center mb-11">{challenge.nameChallenge}</h1>
@@ -146,9 +143,9 @@ function JoinChallenge() {
                     />
                 </div>
 
-                <h1 className="text-2xl font-semibold mb-4">Upload video</h1>
+                <h1 className="text-2xl font-semibold mb-4">Tải video</h1>
 
-                <p className="text-gray-600 mb-6">Post a video to your account</p>
+                <p className="text-gray-600 mb-6">Tham gia thử thách này với 1 video!</p>
                 <div className="flex flex-col md:flex-row gap-6">
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center w-full md:w-1/3">
                         {videoPreview ? (
@@ -158,11 +155,10 @@ function JoinChallenge() {
                                 <div className="text-gray-400 mb-4">
                                     <FontAwesomeIcon className="text-4xl" icon={faCloudArrowUp} />
                                 </div>
-                                <p className="text-gray-600 mb-2">Select video to upload</p>
-                                <p className="text-gray-400 mb-4">Or drag and drop a file</p>
+                                <p className="text-gray-600 mb-2">Chọn video để tham gia</p>
                                 <p className="text-gray-400 mb-2">MP4</p>
-                                <p className="text-gray-400 mb-2">Up to 30 minutes</p>
-                                <p className="text-gray-400 mb-4">Less than 2 GB</p>
+                                <p className="text-gray-400 mb-2">Video lên đến 30 phút!</p>
+                                <p className="text-gray-400 mb-4">Dung lượng nhỏ hơn 2GB</p>
                             </>
                         )}
                         <input
@@ -172,12 +168,16 @@ function JoinChallenge() {
                             className="hidden"
                             id="video-upload"
                             key={inputKey}
+                            disabled={loading}
                         />
                         <label
                             htmlFor="video-upload"
-                            className="bg-pink-500 text-white mt-3 px-4 py-2 rounded-lg cursor-pointer"
+                            className={`bg-pink-500 text-white mt-3 px-4 py-2 rounded-lg cursor-pointer ${
+                                loading ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                            disabled={loading}
                         >
-                            Chọn tệp
+                            {loading ? 'Chọn tệp' : 'Chọn tệp'}
                         </label>
                     </div>
                     <div className="flex-1">
@@ -192,6 +192,7 @@ function JoinChallenge() {
                                 className="w-full border border-gray-300 rounded-lg p-2"
                                 maxLength="200"
                                 placeholder="Nhập mô tả video..."
+                                disabled={loading}
                             ></textarea>
                             <p className="text-gray-400 text-sm text-right mt-1">{describe.length}/200</p>
                         </div>
@@ -209,7 +210,7 @@ function JoinChallenge() {
                                 onClick={handlePost}
                                 disabled={loading}
                             >
-                                {loading ? 'Đang tải...' : 'Post'}
+                                {loading ? 'Đang tải...' : 'Tải'}
                             </button>
                         </div>
                     </div>

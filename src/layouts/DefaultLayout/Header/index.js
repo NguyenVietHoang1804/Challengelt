@@ -5,7 +5,14 @@ import Container from 'react-bootstrap/Container';
 import Navbar from 'react-bootstrap/Navbar';
 import Button from '~/components/Button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBell, faCircleUser, faRankingStar, faScrewdriverWrench, faXmark } from '@fortawesome/free-solid-svg-icons';
+import {
+    faBell,
+    faCircleUser,
+    faRankingStar,
+    faScrewdriverWrench,
+    faSpinner,
+    faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import { useContext, useEffect, useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Search from '../Search';
@@ -24,6 +31,7 @@ function Header() {
     const [loginError, setLoginError] = useState('');
     const [isRegister, setIsRegister] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         const fetchCurrentUser = async () => {
@@ -45,6 +53,7 @@ function Header() {
         async (e) => {
             e.preventDefault();
             setLoginError('');
+            setIsLoading(true);
 
             const email = e.target.email.value;
             const password = e.target.password.value;
@@ -58,6 +67,8 @@ function Header() {
                 setIsModalOpen(false);
             } catch (error) {
                 setLoginError('Đăng nhập thất bại: ' + error.message);
+            } finally {
+                setIsLoading(false);
             }
         },
         [setUserId, setDisplayName],
@@ -66,6 +77,7 @@ function Header() {
     const handleRegister = useCallback(async (e) => {
         e.preventDefault();
         setLoginError('');
+        setIsLoading(true);
 
         const email = e.target.email.value;
         const password = e.target.password.value;
@@ -86,6 +98,8 @@ function Header() {
             setIsRegister(false);
         } catch (error) {
             setLoginError('Đăng ký thất bại: ' + error.message);
+        } finally {
+            setIsLoading(false);
         }
     }, []);
 
@@ -93,36 +107,54 @@ function Header() {
         <div className={cx('modal-overlay', { show: isModalOpen })}>
             <div className={cx('modal-form', { show: isModalOpen })}>
                 <h1>{isRegister ? 'Đăng Ký Tài Khoản' : 'Đăng Nhập vào Challengelt'}</h1>
-                <FontAwesomeIcon className={cx('close-modal')} onClick={() => setIsModalOpen(false)} icon={faXmark} />
+                {!isLoading && (
+                    <FontAwesomeIcon
+                        className={cx('close-modal')}
+                        onClick={() => setIsModalOpen(false)}
+                        icon={faXmark}
+                    />
+                )}
                 <form onSubmit={isRegister ? handleRegister : handleLogin}>
-                    {isRegister && <input name="name" type="text" placeholder="Tên hiển thị" required />}
-                    <input name="email" type="email" placeholder="Email" required />
-                    <input name="password" type="password" placeholder="Mật khẩu" required />
                     {isRegister && (
-                        <input name="confirmPassword" type="password" placeholder="Xác nhận mật khẩu" required />
+                        <input name="name" type="text" placeholder="Tên hiển thị" required disabled={isLoading} />
+                    )}
+                    <input name="email" type="email" placeholder="Email" required disabled={isLoading} />
+                    <input name="password" type="password" placeholder="Mật khẩu" required disabled={isLoading} />
+                    {isRegister && (
+                        <input
+                            name="confirmPassword"
+                            type="password"
+                            placeholder="Xác nhận mật khẩu"
+                            required
+                            disabled={isLoading}
+                        />
                     )}
                     {loginError && <p className={cx('error')}>{loginError}</p>}
-                    <button className={cx('btn-login')} type="submit">
-                        {isRegister ? 'Đăng Ký' : 'Đăng Nhập'}
+                    <button className={cx('btn-login')} type="submit" disabled={isLoading}>
+                        {isLoading ? <FontAwesomeIcon icon={faSpinner} spin /> : isRegister ? 'Đăng Ký' : 'Đăng Nhập'}
                     </button>
-                    <p>Hoặc</p>
-                    <span>
-                        {isRegister ? (
-                            <>
-                                Bạn đã có tài khoản?{' '}
-                                <span className={cx('btn-dangnhap')} onClick={() => setIsRegister(false)}>
-                                    Đăng Nhập
-                                </span>
-                            </>
-                        ) : (
-                            <>
-                                Bạn chưa có tài khoản?{' '}
-                                <span className={cx('btn-dangky')} onClick={() => setIsRegister(true)}>
-                                    Đăng Ký
-                                </span>
-                            </>
-                        )}
-                    </span>
+                    {!isLoading && (
+                        <>
+                            <p>Hoặc</p>
+                            <span>
+                                {isRegister ? (
+                                    <>
+                                        Bạn đã có tài khoản?{' '}
+                                        <span className={cx('btn-dangnhap')} onClick={() => setIsRegister(false)}>
+                                            Đăng Nhập
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        Bạn chưa có tài khoản?{' '}
+                                        <span className={cx('btn-dangky')} onClick={() => setIsRegister(true)}>
+                                            Đăng Ký
+                                        </span>
+                                    </>
+                                )}
+                            </span>
+                        </>
+                    )}
                 </form>
             </div>
         </div>
@@ -178,14 +210,13 @@ function Header() {
                                 Đăng Nhập
                             </Button>
                             {isModalOpen && <ModalForm />}
-                            
                         </>
                     )}
                     <Tippy content="Bảng xếp hạng" placement="bottom">
-                                <Link className={cx('iconRank', { active: location.pathname === '/rank' })} to="/rank">
-                                    <FontAwesomeIcon icon={faRankingStar} />
-                                </Link>
-                            </Tippy>
+                        <Link className={cx('iconRank', { active: location.pathname === '/rank' })} to="/rank">
+                            <FontAwesomeIcon icon={faRankingStar} />
+                        </Link>
+                    </Tippy>
                 </div>
             </Container>
         </div>

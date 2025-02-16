@@ -1,15 +1,17 @@
 'use client';
-import React, { useContext, useEffect, useState } from 'react';
-import { databases, storage, account, Query,ID } from '~/appwrite/config';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { databases, storage, account, Query, ID } from '~/appwrite/config';
 import { UserContext } from '~/contexts/UserContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css'; // optional
 
 const Profile = () => {
-    const { userId, setUserId,displayName } = useContext(UserContext);
+    const { userId, setUserId, displayName } = useContext(UserContext);
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [createdChallenges, setCreatedChallenges] = useState([]);
@@ -34,77 +36,77 @@ const Profile = () => {
         describe: '',
         imgChallenge: null,
     });
-    const fields = ['Thể thao', 'Đời sống', 'Học tập', 'Nấu ăn', 'Sáng tạo', 'Nghệ thuật', 'Kinh doanh','Khoa học','Văn hóa'];
+    const fields = useMemo(
+        () => [
+            'Thể thao',
+            'Đời sống',
+            'Học tập',
+            'Nấu ăn',
+            'Sáng tạo',
+            'Nghệ thuật',
+            'Kinh doanh',
+            'Khoa học',
+            'Văn hóa',
+        ],
+        [],
+    );
 
     const [visibleCreatedChallenges, setVisibleCreatedChallenges] = useState(5);
     const [visibleJoinedChallenges, setVisibleJoinedChallenges] = useState(3);
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            if (!userId) return;
+    const fetchUserData = useCallback(async () => {
+        setLoading(true);
+        if (!userId) return;
+        try {
+            const userResponse = databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId);
+            const createdResponse = databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', [
+                Query.equal('idUserCreated', userId),
+            ]);
+            const joinedResponse = databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
+                Query.equal('idUserJoined', userId),
+            ]);
 
-            try {
-                const userDocument = await databases.getDocument(
-                    '678a0e0000363ac81b93', // Database ID
-                    '678a207f00308710b3b2', // Collection ID
-                    userId,
-                );
-                setUserData(userDocument);
-                const userImage =
-                    userDocument.imgUser ||
-                    'https://cloud.appwrite.io/v1/storage/buckets/678a12cf00133f89ab15/files/679f7b6c00277c0c36bd/view?project=678a0a09003d4f41cb57&mode=admin';
-                setimgUserPreview(userImage);
+            const [user, created, joined] = await Promise.all([userResponse, createdResponse, joinedResponse]);
+            setUserData(user);
+            setCreatedChallenges(created.documents);
+            const userImage =
+                user.imgUser ||
+                'https://cloud.appwrite.io/v1/storage/buckets/678a12cf00133f89ab15/files/679f7b6c00277c0c36bd/view?project=678a0a09003d4f41cb57&mode=admin';
+            setimgUserPreview(userImage);
 
-                setFormData((prev) => ({
-                    ...prev,
-                    displayName: userDocument.displayName || '',
-                }));
-                const challengesQuery = await databases.listDocuments(
-                    '678a0e0000363ac81b93', // Database ID
-                    '678a0fc8000ab9bb90be', // Collection "challenges"
-                    [Query.equal('idUserCreated', userId)], // Lọc theo userId
-                );
+            // 🔹 Lấy thông tin thử thách từ collection "challenges" dựa trên challengeId
+            const joinedChallengesData = await Promise.all(
+                joined.documents.map(async (entry) => {
+                    try {
+                        const challengeData = await databases.getDocument(
+                            '678a0e0000363ac81b93',
+                            '678a0fc8000ab9bb90be',
+                            entry.challengeId,
+                        );
+                        return {
+                            ...challengeData,
+                            userVideo: entry.videoURL, // Gắn video của user vào thử thách
+                            userDescribe: entry.describe, // Gắn mô tả của user vào thử thách
+                            fileId: entry.fileId,
+                        };
+                    } catch (error) {
+                        console.error('Lỗi khi lấy thông tin thử thách đã tham gia:', error);
+                        return null;
+                    }
+                }),
+            );
 
-                setCreatedChallenges(challengesQuery.documents);
-                const joinedChallengesQuery = await databases.listDocuments(
-                    '678a0e0000363ac81b93',
-                    '679c498f001b467ed632', // Collection "joinedChallenges"
-                    [Query.equal('idUserJoined', userId)],
-                );
-
-                // 🔹 Lấy thông tin thử thách từ collection "challenges" dựa trên challengeId
-                const joinedChallengesData = await Promise.all(
-                    joinedChallengesQuery.documents.map(async (entry) => {
-                        try {
-                            const challengeData = await databases.getDocument(
-                                '678a0e0000363ac81b93',
-                                '678a0fc8000ab9bb90be',
-                                entry.challengeId,
-                            );
-                            return {
-                                ...challengeData,
-                                userVideo: entry.videoURL, // Gắn video của user vào thử thách
-                                userDescribe: entry.describe, // Gắn mô tả của user vào thử thách
-                                fileId: entry.fileId,
-                            };
-                        } catch (error) {
-                            console.error('Lỗi khi lấy thông tin thử thách đã tham gia:', error);
-                            return null;
-                        }
-                    }),
-                );
-
-                // 🔹 Loại bỏ các thử thách bị lỗi
-                setJoinedChallenges(joinedChallengesData.filter(Boolean));
-            } catch (error) {
-                console.error('Lỗi khi lấy thông tin người dùng:', error.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchUserData();
+            // 🔹 Loại bỏ các thử thách bị lỗi
+            setJoinedChallenges(joinedChallengesData.filter(Boolean));
+        } catch (error) {
+            console.error('Lỗi khi lấy thông tin người dùng:', error.message);
+        } finally {
+            setLoading(false);
+        }
     }, [userId]);
+    useEffect(() => {
+        fetchUserData();
+    }, [fetchUserData]);
 
     const handleShowMoreCreatedChallenges = () => {
         setVisibleCreatedChallenges((prev) => prev + 5);
@@ -138,28 +140,31 @@ const Profile = () => {
 
     const handleSaveChallengeChanges = async () => {
         if (!editingChallenge) return;
+
         setIsSavingChallenge(true);
         try {
             let imgChallengeUrl = editingChallenge.imgChallenge;
-            if (challengeForm.imgChallenge instanceof File) {
-                const fileResponse = await storage.createFile(
-                    '678a12cf00133f89ab15',
-                    'unique()',
-                    challengeForm.imgChallenge,
-                );
-                imgChallengeUrl = storage.getFileView('678a12cf00133f89ab15', fileResponse.$id);
-            }
-            const updatedChallenge = await databases.updateDocument(
-                '678a0e0000363ac81b93',
-                '678a0fc8000ab9bb90be',
-                editingChallenge.$id,
-                {
+
+            // Nếu có ảnh mới thì tải lên
+            const uploadImagePromise =
+                challengeForm.imgChallenge instanceof File
+                    ? storage.createFile('678a12cf00133f89ab15', 'unique()', challengeForm.imgChallenge)
+                    : null;
+
+            // Cập nhật dữ liệu thử thách song song với việc tải ảnh (nếu có)
+            const [fileResponse, updatedChallenge] = await Promise.all([
+                uploadImagePromise,
+                databases.updateDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', editingChallenge.$id, {
                     nameChallenge: challengeForm.nameChallenge,
                     field: challengeForm.field,
                     describe: challengeForm.describe,
-                    imgChallenge: imgChallengeUrl,
-                },
-            );
+                    imgChallenge: uploadImagePromise
+                        ? storage.getFileView('678a12cf00133f89ab15', (await uploadImagePromise).$id)
+                        : imgChallengeUrl,
+                }),
+            ]);
+
+            // Cập nhật danh sách thử thách mà không gây re-render toàn bộ
             setCreatedChallenges((prev) => prev.map((c) => (c.$id === updatedChallenge.$id ? updatedChallenge : c)));
             setEditingChallenge(null);
             alert('Cập nhật thử thách thành công!');
@@ -209,27 +214,28 @@ const Profile = () => {
         }
     };
 
+    const validatePassword = () => {
+        if (!isChangingPassword) return true;
+        if (!formData.newPassword) {
+            setErrorMessage('Mật khẩu mới không được để trống.');
+            return false;
+        }
+        if (formData.newPassword !== formData.confirmPassword) {
+            setErrorMessage('Mật khẩu mới và xác nhận không khớp.');
+            return false;
+        }
+        return true;
+    };
+
     const handleSaveChanges = async () => {
         setErrorMessage('');
-        const confirmSave = window.confirm('Bạn có chắc chắn muốn lưu những thay đổi này không?');
-        if (!confirmSave) return;
 
-        // Kiểm tra mật khẩu mới
-        if (isChangingPassword) {
-            if (formData.newPassword !== formData.confirmPassword) {
-                setErrorMessage('Mật khẩu mới và xác nhận không khớp.');
-                return;
-            }
-            if (formData.newPassword === '') {
-                setErrorMessage('Mật khẩu mới không được để trống.');
-                return;
-            }
-        }
+        if (!window.confirm('Bạn có chắc chắn muốn lưu những thay đổi này không?')) return;
+
+        if (!validatePassword()) return;
 
         try {
-            // Kiểm tra session
-            const accountInfo = await account.get(); // Lấy thông tin tài khoản
-
+            const accountInfo = await account.get(); // Kiểm tra session
             if (!accountInfo) {
                 setErrorMessage('Bạn cần đăng nhập để thực hiện thao tác này.');
                 return;
@@ -237,102 +243,133 @@ const Profile = () => {
 
             let imgUserUrl = userData.imgUser;
 
-            // Tải ảnh mới nếu có
+            // 🔹 Tải ảnh mới nếu có
             if (formData.imgUserFile) {
                 const fileResponse = await storage.createFile('678a12cf00133f89ab15', 'unique()', formData.imgUserFile);
                 imgUserUrl = storage.getFileView('678a12cf00133f89ab15', fileResponse.$id);
             }
 
-            await account.updateName(formData.displayName);
-
-            // Cập nhật mật khẩu
-            if (isChangingPassword && formData.newPassword) {
-                await account.updatePassword(formData.newPassword, formData.currentPassword);
-            }
-
-            // Cập nhật thông tin khác
-            const updatedUser = await databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId, {
-                displayName: formData.displayName,
-                imgUser: imgUserUrl,
-            });
+            // 🔹 Cập nhật thông tin đồng thời để tăng tốc xử lý
+            await Promise.all([
+                account.updateName(formData.displayName),
+                isChangingPassword
+                    ? account.updatePassword(formData.newPassword, formData.currentPassword)
+                    : Promise.resolve(), // Không đổi mật khẩu thì bỏ qua
+                databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId, {
+                    displayName: formData.displayName,
+                    imgUser: imgUserUrl,
+                }),
+            ]);
 
             alert('Cập nhật thông tin thành công!');
-            setUserData(updatedUser);
+            setUserData((prev) => ({ ...prev, displayName: formData.displayName, imgUser: imgUserUrl }));
+            setFormData((prev) => ({
+                ...prev,
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: '',
+            }));
             setIsEditing(false);
             setIsChangingPassword(false);
         } catch (error) {
-            console.error('Lỗi khi cập nhật thông tin:', error.message);
-            setErrorMessage('Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.');
+            console.error('Lỗi khi cập nhật thông tin:', error);
+            setErrorMessage(error.message || 'Đã xảy ra lỗi khi cập nhật thông tin. Vui lòng thử lại.');
         }
     };
 
-    const handleLeaveChallenge = async (challenge) => {
-        const confirmLeave = window.confirm(
-            `Bạn có chắc chắn muốn rời khỏi thử thách "${challenge.nameChallenge}" không?`,
-        );
-        if (!confirmLeave) return;
-
-        try {
-            // 🔹 1. Xóa video khỏi Storage
-            if (challenge.fileId) {
-                await storage.deleteFile('678a12cf00133f89ab15', challenge.fileId);
-            } else {
-                console.warn('Không tìm thấy fileId, bỏ qua xóa video');
+    const handleLeaveChallenge = useCallback(
+        async (challenge) => {
+            if (!window.confirm(`Bạn có chắc chắn muốn rời khỏi thử thách "${challenge.nameChallenge}" không?`)) {
+                return;
             }
 
-            const challengeData = await databases.getDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', challenge.$id);
-        const ownerId = challengeData.idUserCreated; // Chủ thử thách
+            try {
+                // 🔹 1. Xóa video khỏi Storage (nếu có)
+                const deleteFilePromise = challenge.fileId
+                    ? storage.deleteFile('678a12cf00133f89ab15', challenge.fileId)
+                    : Promise.resolve();
 
-            // 🔹 2. Xóa dữ liệu khỏi collection "joinedChallenges"
-            const joinedChallengesQuery = await databases.listDocuments(
-                '678a0e0000363ac81b93',
-                '679c498f001b467ed632',
-                [Query.equal('idUserJoined', userId), Query.equal('challengeId', challenge.$id)],
-            );
+                // 🔹 2. Tìm và xóa dữ liệu tham gia thử thách
+                const joinedChallengesQuery = await databases.listDocuments(
+                    '678a0e0000363ac81b93',
+                    '679c498f001b467ed632',
+                    [Query.equal('idUserJoined', userId), Query.equal('challengeId', challenge.$id)],
+                );
 
-            if (joinedChallengesQuery.documents.length > 0) {
-                const joinedChallengeId = joinedChallengesQuery.documents[0].$id;
-                await databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', joinedChallengeId);
+                const joinedChallenge = joinedChallengesQuery.documents[0];
+                if (!joinedChallenge) {
+                    console.warn('Không tìm thấy dữ liệu tham gia, bỏ qua xóa');
+                    return;
+                }
+                const deleteJoinedChallengePromise = databases.deleteDocument(
+                    '678a0e0000363ac81b93',
+                    '679c498f001b467ed632',
+                    joinedChallenge.$id,
+                );
+
+                // 🔹 3. Giảm số lượng người tham gia
+                const updatedParticipants = Math.max(challenge.participants - 1, 0);
+                const updateChallengePromise = databases.updateDocument(
+                    '678a0e0000363ac81b93',
+                    '678a0fc8000ab9bb90be',
+                    challenge.$id,
+                    { participants: updatedParticipants },
+                );
+
+                // 🔹 4. Trừ điểm của người tham gia và chủ thử thách
+                const updatePoints = async (userId) => {
+                    const userData = await databases.getDocument(
+                        '678a0e0000363ac81b93',
+                        '678a207f00308710b3b2',
+                        userId,
+                    );
+                    const newPoints = Math.max((userData.points || 0) - 5, 0);
+                    return databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId, {
+                        points: newPoints,
+                    });
+                };
+
+                const challengeData = challenge.idUserCreated
+                    ? challenge
+                    : await databases.getDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', challenge.$id);
+                const ownerId = challengeData.idUserCreated;
+
+                const updatePointsPromises = [updatePoints(userId)];
+                if (ownerId) updatePointsPromises.push(updatePoints(ownerId));
+
+                // 🔹 5. Gửi thông báo đến chủ thử thách
+                const notificationPromise = databases.createDocument(
+                    '678a0e0000363ac81b93',
+                    'notifications',
+                    ID.unique(),
+                    {
+                        userId: ownerId,
+                        message: `${displayName} đã rời khỏi thử thách của bạn: ${challengeData.nameChallenge}. Bạn bị trừ 5 điểm!`,
+                        challengeId: challenge.$id,
+                        createdAt: new Date().toISOString(),
+                    },
+                );
+
+                // 🔹 6. Chạy tất cả các request song song
+                await Promise.all([
+                    deleteFilePromise,
+                    deleteJoinedChallengePromise,
+                    updateChallengePromise,
+                    ...updatePointsPromises,
+                    notificationPromise,
+                ]);
+
+                // 🔹 7. Cập nhật UI
+                setJoinedChallenges((prev) => prev.filter((c) => c.$id !== challenge.$id));
+
+                alert('Bạn đã rời khỏi thử thách thành công!');
+            } catch (error) {
+                console.error('Lỗi khi rời khỏi thử thách:', error);
+                alert('Không thể rời khỏi thử thách, vui lòng thử lại.');
             }
-
-            // 🔹 3. Giảm số lượng người tham gia (participants)
-            const updatedParticipants = Math.max(challenge.participants - 1, 0);
-            await databases.updateDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', challenge.$id, {
-                participants: updatedParticipants,
-            });
-
-        
-
-            const updatePoints = async (userId) => {
-                const userData = await databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId);
-                const newPoints = Math.max((userData.points || 0) - 5, 0); // Trừ 5 điểm, không xuống dưới 0
-                await databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId, {
-                    points: newPoints,
-                });
-            };
-    
-            await updatePoints(userId); // Trừ điểm của người rời thử thách
-            if (ownerId) {
-                await updatePoints(ownerId); // Trừ điểm của chủ thử thách
-            }
-    
-            // 🔹 6. Gửi thông báo đến chủ thử thách
-            await databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
-                userId: ownerId,
-                message: `${displayName} đã rời khỏi thử thách của bạn: ${challengeData.nameChallenge}. Bạn bị trừ 5 điểm!`,
-                challengeId: challenge.$id,
-                createdAt: new Date().toISOString(),
-            });
-
-            // 🔹 4. Cập nhật UI: Loại bỏ thử thách khỏi danh sách
-            setJoinedChallenges((prev) => prev.filter((c) => c.$id !== challenge.$id));
-
-            alert('Bạn đã rời khỏi thử thách thành công!');
-        } catch (error) {
-            console.error('Lỗi khi rời khỏi thử thách:', error);
-            alert('Không thể rời khỏi thử thách, vui lòng thử lại.');
-        }
-    };
+        },
+        [userId, displayName, setJoinedChallenges],
+    );
 
     const handleLogout = async () => {
         const confirmLogout = window.confirm('Bạn có chắc chắn muốn đăng xuất?');
@@ -349,15 +386,48 @@ const Profile = () => {
         }
     };
 
-    if (loading) return <p>Đang tải thông tin...</p>;
-    if (!userData) return <p>Không tìm thấy thông tin người dùng!</p>;
+    if (loading) {
+        return (
+            <div className="relative container mx-auto mt-8 mb-[90px] p-6 bg-white rounded-lg shadow">
+                <div className="mt-6 flex justify-end absolute gap-2 top-14 right-3">
+                    <Skeleton width={102} height={34} className="py-2 px-4 rounded"></Skeleton>
+                    <Skeleton width={46} height={34} className="py-2 px-4 rounded"></Skeleton>
+                </div>
+                <div className="flex items-center">
+                    <Skeleton circle={true} height={100} width={100} />
+                    <Skeleton width={180} height={30} className="ml-4"></Skeleton>
+                </div>
+                <div className="mt-10">
+                    <Skeleton width={152} height={23}></Skeleton>
+                    <div className="grid grid-cols-3 gap-4 mt-4">
+                        <Skeleton className="p-4" width={402} height={69}></Skeleton>
+                        <Skeleton className="p-4" width={402} height={69}></Skeleton>
+                        <Skeleton className="p-4" width={402} height={69}></Skeleton>
+                    </div>
+                </div>
+                <div className="mt-10">
+                    <Skeleton width={173} height={23}></Skeleton>
+                    <Skeleton width={100} height={18}></Skeleton>
+                    <div className="mt-2 space-y-2">
+                        <Skeleton className="p-3 mb-2" height={69}></Skeleton>
+                        <Skeleton className="p-3 mb-2" height={69}></Skeleton>
+                        <Skeleton className="p-3 mb-2" height={69}></Skeleton>
+                        <Skeleton className="p-3 mb-2" height={69}></Skeleton>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="relative container mx-auto mt-8 mb-[90px] p-6 bg-white rounded-lg shadow">
             <div className="mt-6 flex justify-end absolute gap-2 top-14 right-3">
                 <button
                     className="bg-blue-500 text-white font-semibold py-2 px-4 rounded"
-                    onClick={() => setIsEditing(true)}
+                    onClick={() => {
+                        setIsEditing(true);
+                        setFormData((prev) => ({ ...prev, displayName: userData.displayName }));
+                    }}
                 >
                     Sửa hồ sơ
                 </button>
@@ -368,7 +438,14 @@ const Profile = () => {
                 </Tippy>
             </div>
             <div className="flex items-center">
-                <img src={imgUserPreview} alt="imgUser" width={100} height={100} loading="lazy" className="rounded-full" />
+                <img
+                    src={imgUserPreview}
+                    alt="imgUser"
+                    width={100}
+                    height={100}
+                    loading="lazy"
+                    className="rounded-full"
+                />
                 <h1 className="text-5xl font-bold ml-4">{userData.displayName}</h1>
             </div>
 

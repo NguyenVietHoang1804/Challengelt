@@ -1,10 +1,12 @@
 'use client';
 import React, { useEffect, useState, useContext, useCallback, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { databases, Query,storage,ID } from '~/appwrite/config';
+import { databases, Query, storage, ID } from '~/appwrite/config';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import { UserContext } from '~/contexts/UserContext';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 
 function ChallengeDetail() {
     const { id } = useParams();
@@ -13,17 +15,19 @@ function ChallengeDetail() {
     const [participants, setParticipants] = useState([]);
     const [hasJoined, setHasJoined] = useState(false);
     const [visibleParticipants, setVisibleParticipants] = useState(3);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchChallenge = async () => {
+            setLoading(true);
             try {
                 const response = await databases.getDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', id);
                 setChallenge(response);
             } catch (error) {
-                console.error('Thử thách không tồn tại hoặc xảy ra lỗi:', error);
+            } finally {
+                setLoading(false);
             }
         };
-
         const fetchParticipants = async () => {
             try {
                 const response = await databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
@@ -32,9 +36,7 @@ function ChallengeDetail() {
                 setParticipants(response.documents);
                 const userJoined = response.documents.some((participant) => participant.idUserJoined === userId);
                 setHasJoined(userJoined);
-            } catch (error) {
-                console.error('Lỗi khi lấy danh sách người tham gia:', error);
-            }
+            } catch (error) {}
         };
 
         fetchChallenge();
@@ -49,9 +51,10 @@ function ChallengeDetail() {
         setVisibleParticipants(3);
     };
 
-    const handleLeaveChallenge =useCallback( async () => {
+    const handleLeaveChallenge = useCallback(async () => {
         if (!window.confirm('Bạn có chắc chắn muốn rời khỏi thử thách này?')) return;
-    
+        setLoading(true);
+
         try {
             // 🔹 1. Lấy thông tin của người tham gia
             const participant = participants.find((p) => p.idUserJoined === userId);
@@ -59,45 +62,52 @@ function ChallengeDetail() {
                 alert('Bạn chưa tham gia thử thách này!');
                 return;
             }
-    
+
             // 🔹 2. Xóa video trong Storage nếu có
             if (participant.fileId) {
                 await storage.deleteFile('678a12cf00133f89ab15', participant.fileId);
             }
-    
+
             // 🔹 3. Xóa dữ liệu tham gia trong "joinedChallenges"
             await databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', participant.$id);
 
-            
-    
             // 🔹 4. Lấy thông tin thử thách để trừ điểm
             const challengeData = await databases.getDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', id);
             if (!challengeData) {
                 console.error('Thử thách không tồn tại!');
                 return;
             }
-    
+
             const updatedParticipants = Math.max((challengeData.participants || 1) - 1, 0);
             await databases.updateDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', id, {
                 participants: updatedParticipants,
             });
-    
+
             // 🔹 5. Lấy thông tin điểm của người tham gia và chủ thử thách
             const userDoc = await databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId);
-            const ownerDoc = await databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', challengeData.idUserCreated);
-    
+            const ownerDoc = await databases.getDocument(
+                '678a0e0000363ac81b93',
+                '678a207f00308710b3b2',
+                challengeData.idUserCreated,
+            );
+
             const userPoints = userDoc?.points || 0;
             const ownerPoints = ownerDoc?.points || 0;
-    
+
             // 🔹 6. Trừ điểm của người tham gia và chủ thử thách (tối thiểu là 0 điểm)
             await databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId, {
                 points: Math.max(userPoints - 5, 0),
             });
-    
-            await databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', challengeData.idUserCreated, {
-                points: Math.max(ownerPoints - 5, 0),
-            });
-    
+
+            await databases.updateDocument(
+                '678a0e0000363ac81b93',
+                '678a207f00308710b3b2',
+                challengeData.idUserCreated,
+                {
+                    points: Math.max(ownerPoints - 5, 0),
+                },
+            );
+
             // 🔹 7. Gửi thông báo đến chủ thử thách
             await databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
                 userId: challengeData.idUserCreated,
@@ -105,23 +115,40 @@ function ChallengeDetail() {
                 challengeId: id,
                 createdAt: new Date().toISOString(),
             });
-    
+
             alert('Bạn đã rời khỏi thử thách.');
             setHasJoined(false);
             setParticipants((prev) => prev.filter((p) => p.$id !== participant.$id));
             setChallenge((prev) => ({ ...prev, participants: updatedParticipants }));
         } catch (error) {
-            console.error('Lỗi khi rời khỏi thử thách:', error);
             alert('Có lỗi xảy ra, vui lòng thử lại.');
+        } finally {
+            setLoading(false);
         }
-    },[participants, userId,id]);
+    }, [participants, userId, id]);
 
-    const participantList = useMemo(() => participants.slice(0, visibleParticipants), [participants, visibleParticipants]);
+    const participantList = useMemo(
+        () => participants.slice(0, visibleParticipants),
+        [participants, visibleParticipants],
+    );
 
-    if (!challenge) {
-        return <p>Đang tải thông tin thử thách...</p>;
+    if (loading) {
+        return (
+            <div className="container mx-auto p-6 bg-white rounded-lg shadow mt-8 mb-32">
+                <div>
+                    <Skeleton width={400} height={38} className="ml-[420px] mb-[28px] mt-[58px]"></Skeleton>
+                    <Skeleton width={600} height={300} className="mt-4 rounded-lg"></Skeleton>
+                </div>
+                <div className="mt-11 mb-11">
+                    <Skeleton width={236} height={25}></Skeleton>
+                    <Skeleton width={180} height={15}></Skeleton>
+                    <Skeleton width={300} height={15}></Skeleton>
+                    <Skeleton width={200} height={15}></Skeleton>
+                    <Skeleton width={150} height={15}></Skeleton>
+                </div>
+            </div>
+        );
     }
-
     return (
         <div className="container mx-auto p-6 bg-white rounded-lg shadow mt-8 mb-32">
             {/* Thông tin chi tiết thử thách */}
@@ -159,9 +186,12 @@ function ChallengeDetail() {
                     {hasJoined ? (
                         <button
                             onClick={handleLeaveChallenge}
-                            className="mt-4 bg-red-500 text-white font-semibold py-2 px-4 rounded"
+                            className={`mt-4 bg-red-500 text-white font-semibold py-2 px-4 rounded ${
+                                loading ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                            disabled={loading}
                         >
-                            Rời khỏi thử thách
+                            {loading ? 'Đang rời khỏi thử thách...' : 'Rời khỏi thử thách'}
                         </button>
                     ) : (
                         <Link to={`/joinChallenge/${id}`}>
@@ -182,7 +212,12 @@ function ChallengeDetail() {
                             <div key={participant.$id} className="flex flex-col bg-gray-100 p-4 rounded-lg shadow">
                                 <p className="font-bold">{participant.userName}</p>
                                 <p className="text-gray-600">Mô tả: {participant.describe}</p>
-                                <video src={participant.videoURL} loading="lazy" controls className="w-full mt-2 rounded-lg"></video>
+                                <video
+                                    src={participant.videoURL}
+                                    loading="lazy"
+                                    controls
+                                    className="w-full mt-2 rounded-lg"
+                                ></video>
                             </div>
                         ))
                     ) : (

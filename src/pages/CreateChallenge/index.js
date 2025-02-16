@@ -1,5 +1,5 @@
 'use client';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useCallback, useMemo } from 'react';
 import { storage, databases } from '~/appwrite/config';
 import { ID } from 'appwrite';
 import { UserContext } from '~/contexts/UserContext';
@@ -14,7 +14,19 @@ function CreateChallenge() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
+    const fieldOptions = useMemo(
+        () => ['Thể thao', 'Đời sống', 'Học tập', 'Nấu ăn', 'Sáng tạo', 'Nghệ thuật', 'Kinh doanh', 'Khoa học', 'Văn hóa'],
+        []
+    );
+
+    const handleImageChange = useCallback((e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImage(file);
+        }
+    }, []);
+
+    const handleSubmit =useCallback( async (e) => {
         e.preventDefault();
 
         if (!userId) {
@@ -34,7 +46,7 @@ function CreateChallenge() {
                     image,
                 );
                 fileImgId = uploadResponse.$id;
-                imageUrl = storage.getFileView('678a12cf00133f89ab15', uploadResponse.$id);
+                imageUrl = storage.getFileView('678a12cf00133f89ab15', fileImgId);
                 
             }
 
@@ -63,7 +75,7 @@ function CreateChallenge() {
         } finally {
             setLoading(false);
         }
-    };
+    },[nameChallenge, describe, field, image, navigate,displayName,userId]);
 
     const resetForm = () => {
         setNameChallenge('');
@@ -107,16 +119,12 @@ function CreateChallenge() {
                         className="w-full border border-gray-300 rounded p-2"
                         required
                     >
-                        <option value="">Chọn lĩnh vực</option>
-                        <option value="Sáng tạo">Sáng tạo</option>
-                        <option value="Thể thao">Thể thao</option>
-                        <option value="Nghệ thuật">Nghệ thuật</option>
-                        <option value="Học tập">Học tập</option>
-                        <option value="Nấu ăn">Nấu ăn</option>
-                        <option value="Đời sống">Đời sống</option>
-                        <option value="Kinh doanh">Kinh doanh</option>
-                        <option value="Khoa học">Khoa học</option>
-                        <option value="Văn hóa">Văn hóa</option>
+                        <optgroup label='Chọn lĩnh vực'></optgroup>
+                        {fieldOptions.map((option) => (
+                            <option key={option} value={option}>
+                                {option}
+                            </option>
+                        ))}
                     </select>
                 </div>
 
@@ -125,7 +133,8 @@ function CreateChallenge() {
                     <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => setImage(e.target.files[0])}
+                        onChange={handleImageChange}
+                        required
                         className="w-full border border-gray-300 rounded p-2"
                     />
                 </div>
@@ -146,4 +155,4 @@ function CreateChallenge() {
     );
 }
 
-export default CreateChallenge;
+export default React.memo(CreateChallenge);

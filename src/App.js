@@ -24,7 +24,7 @@ function App() {
                                     }
                                 />
                             );
-                        }else
+                        } else
                             return (
                                 <Route
                                     key={index}

@@ -10,10 +10,13 @@ import ProfileUser from '~/pages/ProfileUser';
 import Admin from '~/pages/Admin';
 import SearchResult from '~/pages/SearchResult';
 import Rank from '~/pages/Rank';
+import Chat from '~/pages/Chat/Chat';
+import Friends from '~/pages/Friends/Friends';
 
 
 const publicRoutes=[
     {path: '/', component: Home},
+    {path: '/home', component: Home},
     {path: '/joinChallenge/:id', component: joinChallenge},
     {path: '/challenge/:id', component: ChallengeDetail},
     {path: '/award', component: Award},
@@ -24,13 +27,9 @@ const publicRoutes=[
     {path: '/profile/:id', component: ProfileUser },
     {path: '/admin', component: Admin },
     {path: '/search', component: SearchResult },
-    {path: '/Rank', component: Rank },
-    // {path: '/@:username', component: Profile },
-    // {path: '/@:searchValue', component: Search },
+    {path: '/rank', component: Rank },
+    {path: '/chat', component: Chat },
+    {path: '/friends', component: Friends },
 ]
 
-const privateRoutes=[
-    
-]
-
-export { publicRoutes, privateRoutes }
+export { publicRoutes }

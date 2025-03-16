@@ -8,6 +8,7 @@ const UserProvider = ({ children }) => {
     const [userId, setUserId] = useState(null);
     const [displayName, setDisplayName] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -35,7 +36,7 @@ const UserProvider = ({ children }) => {
         setDisplayName(name);
     };
     return (
-        <UserContext.Provider value={{ userId, displayName, setUserId: updateUserContext, setDisplayName }}>
+        <UserContext.Provider value={{ userId, displayName, setUserId: updateUserContext, setDisplayName, unreadCount, setUnreadCount }}>
             {!loading && children}
         </UserContext.Provider>
     );

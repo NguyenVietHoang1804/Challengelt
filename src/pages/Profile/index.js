@@ -260,6 +260,34 @@ const Profile = () => {
                     imgUser: imgUserUrl,
                 }),
             ]);
+            // 🔹 Cập nhật tên hiển thị trong bảng `joinedChallenges`
+            const joinedChallengesResponse = await databases.listDocuments(
+                '678a0e0000363ac81b93',
+                '679c498f001b467ed632',
+                [Query.equal('idUserJoined', userId)],
+            );
+
+            const updateJoinedChallenges = joinedChallengesResponse.documents.map((doc) =>
+                databases.updateDocument('678a0e0000363ac81b93', '679c498f001b467ed632', doc.$id, {
+                    userName: formData.displayName,
+                }),
+            );
+
+            // 🔹 Cập nhật tên hiển thị trong bảng `challenges`
+            const createdChallengesResponse = await databases.listDocuments(
+                '678a0e0000363ac81b93',
+                '678a0fc8000ab9bb90be',
+                [Query.equal('idUserCreated', userId)],
+            );
+
+            const updateCreatedChallenges = createdChallengesResponse.documents.map((doc) =>
+                databases.updateDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', doc.$id, {
+                    createdBy: formData.displayName,
+                }),
+            );
+
+            // 🔹 Chạy tất cả cập nhật đồng thời để tăng tốc độ
+            await Promise.all([...updateJoinedChallenges, ...updateCreatedChallenges]);
 
             alert('Cập nhật thông tin thành công!');
             setUserData((prev) => ({ ...prev, displayName: formData.displayName, imgUser: imgUserUrl }));
@@ -379,7 +407,6 @@ const Profile = () => {
             setUserId(null);
             alert('Đăng xuất thành công!');
             navigate('/');
-            window.location.reload();
         } catch (error) {
             console.error('Lỗi khi đăng xuất:', error.message);
             alert('Đăng xuất thất bại, vui lòng thử lại.');
@@ -406,7 +433,6 @@ const Profile = () => {
                     </div>
                 </div>
                 <div className="mt-10">
-                    <Skeleton width={173} height={23}></Skeleton>
                     <Skeleton width={100} height={18}></Skeleton>
                     <div className="mt-2 space-y-2">
                         <Skeleton className="p-3 mb-2" height={69}></Skeleton>
@@ -444,7 +470,7 @@ const Profile = () => {
                     width={100}
                     height={100}
                     loading="lazy"
-                    className="rounded-full"
+                    className="rounded-full shadow-md"
                 />
                 <h1 className="text-5xl font-bold ml-4">{userData.displayName}</h1>
             </div>
@@ -546,8 +572,6 @@ const Profile = () => {
                     </div>
 
                     <div className="mt-10">
-                        <h2 className="text-3xl font-semibold">Danh sách thử thách</h2>
-
                         {editingChallenge ? (
                             <div className="mt-6">
                                 <h2 className="text-2xl font-semibold">Chỉnh sửa thử thách</h2>
@@ -671,7 +695,7 @@ const Profile = () => {
                         )}
 
                         <h3 className="text-xl mt-4 font-bold">Thử thách đã tham gia:</h3>
-                        <ul className="grid grid-cols-3 gap-4 mt-2 space-y-2">
+                        <ul className="grid grid-cols-3 gap-4 mt-2">
                             {joinedChallenges.length > 0 ? (
                                 joinedChallenges.slice(0, visibleJoinedChallenges).map((challenge) => (
                                     <div key={challenge.$id} className="relative">
@@ -696,7 +720,7 @@ const Profile = () => {
                                                 <video
                                                     src={challenge.userVideo}
                                                     controls
-                                                    className="min-w-[300px] h-[200px] mt-2 rounded-lg"
+                                                    className="w-[300px] h-[200px] mt-2 rounded-lg"
                                                     loading="lazy"
                                                 ></video>
                                                 <p className="text-gray-600 mt-2">Mô tả: {challenge.userDescribe}</p>

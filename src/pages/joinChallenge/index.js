@@ -129,7 +129,7 @@ function JoinChallenge() {
     }
 
     return (
-        <div className="bg-gray-100 mt-6 mb-32 flex items-center justify-center min-h-screen">
+        <div className="bg-gray-10 mt-6 mb-32 flex items-center justify-center min-h-screen">
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl">
                 <button onClick={() => navigate(-1)} className="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg">
                     {`< Quay lại`}
@@ -158,7 +158,7 @@ function JoinChallenge() {
                                 <p className="text-gray-600 mb-2">Chọn video để tham gia</p>
                                 <p className="text-gray-400 mb-2">MP4</p>
                                 <p className="text-gray-400 mb-2">Video lên đến 30 phút!</p>
-                                <p className="text-gray-400 mb-4">Dung lượng nhỏ hơn 2GB</p>
+                                <p className="text-gray-400 mb-4">Dung lượng nhỏ hơn 50MB</p>
                             </>
                         )}
                         <input

@@ -58,7 +58,7 @@
 .clear:hover {
     color: var(--black);
 }
-.loading{
+.loading {
     position: absolute;
     right: 66px;
     top: 15px;
@@ -66,8 +66,60 @@
     animation: spinner 1s linear infinite;
 }
 
-@keyframes spinner{
-    to{
+@keyframes spinner {
+    to {
         transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 643px) {
+    .search,
+    .search-result {
+        width: 300px;
+    }
+}
+
+@media (max-width: 425px) {
+    .search{
+        width: 250px;
+        height: 30px;
+        .input {
+            width: 150px;
+            height: 100%;
+            font-size: 1.6rem;
+            background-color: transparent;
+        }
+    }
+    .search-result {
+        width: 250px;
+    }
+    .search-btn {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 19px;
+        height: 100%;
+        padding: 0 16px;
+        border-radius: 92px;
+        cursor: pointer;
+        color: rgb(140, 140, 140);
+    }
+    .clear {
+        position: absolute;
+        top: 0;
+        right: 30px;
+        width: 15px;
+        height: 100%;
+        padding: 0 16px;
+        cursor: pointer;
+        color: rgb(140, 140, 140);
+        z-index: 2;
+    }
+    .loading {
+        position: absolute;
+        right: 45px;
+        top: 7px;
+        z-index: 1;
+        animation: spinner 1s linear infinite;
     }
 }

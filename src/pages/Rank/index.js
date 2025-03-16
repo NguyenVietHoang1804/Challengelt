@@ -39,7 +39,7 @@ function Leaderboard() {
             <h1 className="text-4xl font-bold text-center mb-6">🏆 Bảng Xếp Hạng</h1>
             <table className="w-full border-collapse border border-gray-300">
                 <thead>
-                    <tr className="bg-blue-500 text-white">
+                    <tr className="bg-[#f86666] text-white">
                         <th className="p-3 border border-gray-300">#</th>
                         <th className="p-3 border border-gray-300">Người Dùng</th>
                         <th className="p-3 border border-gray-300">Điểm</th>

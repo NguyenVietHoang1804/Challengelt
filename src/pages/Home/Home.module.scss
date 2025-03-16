@@ -1,0 +1,148 @@
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Desktop lớn (trên 1200px) */
+@media (min-width: 1200px) {
+    .challenge-card {
+        padding: 20px;
+    }
+    .challengeImage {
+        width: 300px;
+        height: 200px;
+    }
+    .challenge-title {
+        font-size: 20px;
+    }
+    .challenge-info {
+        font-size: 15px;
+    }
+}
+
+/* Desktop (992px - 1200px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .challenge-card {
+        padding: 15px;
+    }
+    .challengeImage {
+        width: 300px;
+        height: 200px;
+    }
+    .challenge-title {
+        font-size: 20px;
+    }
+    .challenge-info {
+        font-size: 15px;
+    }
+}
+
+/* Tablet (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+    .challenge-card {
+        padding: 10px;
+    }
+    .challengeImage {
+        width: 250px;
+        height: 180px;
+    }
+    .challenge-title {
+        font-size: 20px;
+    }
+    .challenge-info {
+        font-size: 14px;
+    }
+}
+
+/* Mobile lớn (576px - 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+    .challenge-card {
+        padding: 9px;
+    }
+    .challengeImage {
+        width: 200px;
+        height: 100px;
+        margin-right: 10px;
+    }
+    .challenge-title {
+        font-size: 18px;
+    }
+    .challenge-info {
+        font-size: 12px;
+    }
+    .itemMobile {
+        display: flex;
+    }
+}
+
+/* Mobile nhỏ (dưới 576px) */
+@media (max-width: 575px) {
+    .challenge-card {
+        padding: 8px;
+    }
+    .challengeImage {
+        width: 150px;
+        height: 80px;
+        margin-right: 10px;
+    }
+    .challenge-title {
+        font-size: 16px;
+    }
+    .challenge-info {
+        font-size: 10px;
+    }
+    .pagination button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    .skeleton-image {
+        height: 150px;
+    }
+    .skeleton-text {
+        height: 15px;
+    }
+    .pagination button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    .itemMobile {
+        display: flex;
+    }
+}
+
+/* Mobile nhỏ (dưới 576px) */
+@media (max-width: 376px) {
+    .challenge-card {
+        padding: 5px;
+    }
+    .challengeImage {
+        width: 120px;
+        height: 80px;
+        margin-right: 10px;
+    }
+    .challenge-title {
+        font-size: 16px;
+    }
+    .challenge-info {
+        font-size: 10px;
+    }
+    .pagination button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    .skeleton-image {
+        height: 150px;
+    }
+    .skeleton-text {
+        height: 15px;
+    }
+    .pagination button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    .itemMobile {
+        display: flex;
+    }
+}

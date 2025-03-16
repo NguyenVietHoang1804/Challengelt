@@ -7,8 +7,14 @@ import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import { UserContext } from '~/contexts/UserContext';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import { useNavigate } from 'react-router-dom';
+import classNames from 'classnames/bind';
+import styles from './ChallengeDetail.module.scss';
+
+const cx = classNames.bind(styles);
 
 function ChallengeDetail() {
+    const navigate = useNavigate();
     const { id } = useParams();
     const { userId } = useContext(UserContext);
     const [challenge, setChallenge] = useState(null);
@@ -137,7 +143,7 @@ function ChallengeDetail() {
             <div className="container mx-auto p-6 bg-white rounded-lg shadow mt-8 mb-32">
                 <div>
                     <Skeleton width={400} height={38} className="ml-[420px] mb-[28px] mt-[58px]"></Skeleton>
-                    <Skeleton width={600} height={300} className="mt-4 rounded-lg"></Skeleton>
+                    <Skeleton className={cx('skeletonImage')}></Skeleton>
                 </div>
                 <div className="mt-11 mb-11">
                     <Skeleton width={236} height={25}></Skeleton>
@@ -153,9 +159,9 @@ function ChallengeDetail() {
         <div className="container mx-auto p-6 bg-white rounded-lg shadow mt-8 mb-32">
             {/* Thông tin chi tiết thử thách */}
             <div className="flex justify-end">
-                <Link to="/">
+                <button onClick={() => navigate(-1)}>
                     <FontAwesomeIcon icon={faXmark} className="text-5xl bg-slate-100 rounded-full p-2" />
-                </Link>
+                </button>
             </div>
             <div>
                 <div>
@@ -165,23 +171,23 @@ function ChallengeDetail() {
                     <img
                         src={challenge.imgChallenge || 'https://via.placeholder.com/600x300'}
                         alt={challenge.nameChallenge || `Thử thách ${id}`}
-                        className="mt-4 object-cover rounded-lg w-[600px] h-[300px]"
+                        className={cx('challengeImage')}
                         loading="lazy"
                     />
                 </div>
                 <div className="mt-11 mb-11">
-                    <h2 className="text-4xl font-semibold">Mô tả chi tiết thử thách</h2>
+                    <h2 className="text-4xl font-semibold">Thông tin thử thách:</h2>
                     <p className="mt-2 text-gray-600">
-                        <span className="text-gray-900">Lĩnh vực:</span> {challenge.field || 'Chưa xác định'}
+                        <span className="text-gray-900">- Lĩnh vực:</span> {challenge.field || 'Chưa xác định'}
                     </p>
                     <p className="mt-2 text-gray-600">
-                        <span className="text-gray-900">Mô tả:</span> {challenge.describe || 'Không có mô tả.'}
+                        <span className="text-gray-900">- Mô tả:</span> {challenge.describe || 'Không có mô tả.'}
                     </p>
                     <p className="mt-2 text-gray-600">
-                        <span className="text-gray-900">Số người tham gia thử thách:</span> {challenge.participants}
+                        <span className="text-gray-900">- Số người tham gia thử thách:</span> {challenge.participants}
                     </p>
                     <p className="mt-2 text-gray-600">
-                        <span className="text-gray-900">Tác giả:</span> {challenge.createdBy || 'Chưa xác định'}
+                        <span className="text-gray-900">- Tác giả:</span> {challenge.createdBy || 'Chưa xác định'}
                     </p>
                     {hasJoined ? (
                         <button
@@ -206,7 +212,7 @@ function ChallengeDetail() {
             {/* Danh sách người tham gia */}
             <section className="mt-8">
                 <h2 className="text-xl font-bold mb-4">Danh sách người tham gia</h2>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {participantList.length > 0 ? (
                         participantList.map((participant) => (
                             <div key={participant.$id} className="flex flex-col bg-gray-100 p-4 rounded-lg shadow">

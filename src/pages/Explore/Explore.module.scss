@@ -1,0 +1,125 @@
+@media (min-width: 768px) {
+    .title-sidebar {
+        font-size: 10px;
+    }
+    .tt {
+        font-size: 15px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .challenge-info{
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .explore{
+        font-size: 30px;
+    }
+    .item-sidebar{
+        font-size: 12px;
+    }
+    .sidebar{
+        width: 500px;
+    }
+}
+
+@media (max-width: 768px) {
+    .challenge-mobi {
+        display: flex;
+    }
+    .video-mobi {
+        display: flex;
+    }
+    .video {
+        width: 270px;
+        height: 150px;
+    }
+    .video-info {
+        width: 180px;
+        margin-left: 10px;
+    }
+    .tt {
+        font-size: 13px;
+        text-overflow: clip;
+    }
+    .challenge-info{
+        margin-left: 10px;
+        text-overflow: clip;
+    }
+}
+
+@media (max-width: 640px) {
+    .challenge-mobi {
+        display: flex;
+    }
+    .video-mobi {
+        display: flex;
+    }
+    .video {
+        width: 220px;
+        height: 140px;
+    }
+    .video-info {
+        width: 180px;
+        margin-left: 10px;
+    }
+    .tt {
+        font-size: 12px;
+        text-overflow: clip;
+    }
+    .challenge-info{
+        margin-left: 10px;
+        text-overflow: clip;
+    }
+}
+
+@media (max-width: 576px) {
+    .challenge-mobi {
+        display: flex;
+    }
+    .video-mobi {
+        display: flex;
+    }
+    .video {
+        width: 220px;
+        height: 140px;
+    }
+    .video-info {
+        width: 150px;
+        margin-left: 10px;
+    }
+    .tt {
+        font-size: 10px;
+        text-overflow: clip;
+    }
+    .challenge-info{
+        margin-left: 10px;
+        text-overflow: clip;
+    }
+}
+
+@media (max-width: 473px ) {
+    .challenge-mobi {
+        display: block;
+    }
+    .video-mobi {
+        display: block;
+    }
+    .video {
+        width: 220px;
+        height: 140px;
+    }
+    .video-info {
+        width: 150px;
+        margin-left: 10px;
+    }
+    .tt {
+        font-size: 10px;
+        text-overflow: clip;
+    }
+    .challenge-info{
+        margin-left: 10px;
+        text-overflow: clip;
+    }
+}

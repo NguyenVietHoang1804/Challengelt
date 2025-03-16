@@ -1,3 +1,4 @@
+/* Các kiểu cơ bản giữ nguyên và tối ưu hóa */
 .btn-login {
     background-color: var(--color-main);
     color: var(--white);
@@ -14,12 +15,11 @@
     background-color: var(--white);
     box-shadow: 0px 5px 6px -6px #999999;
     height: 60px;
-    width: 100%;
 }
 .con-nav {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center; /* Căn giữa các thành phần trong header */
 }
 
 .logo {
@@ -54,17 +54,17 @@
     max-width: 90%;
     transform: scale(0);
     transition: transform 0.3s;
-    .close-modal {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        font-size: 24px;
-        cursor: pointer;
-        background-color: #16182308;
-        border-radius: 50%;
-        font-size: 30px;
-        padding: 8px;
-    }
+    position: relative;
+}
+.modal-form .close-modal {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 24px;
+    cursor: pointer;
+    background-color: #16182308;
+    border-radius: 50%;
+    padding: 8px;
 }
 
 .modal-form.show {
@@ -92,7 +92,7 @@
     border-radius: 5px;
 }
 
-.btn-login {
+.modal-form .btn-login {
     width: 100%;
     padding: 20px;
     background-color: var(--color-main);
@@ -112,74 +112,168 @@
     margin: 15px;
     opacity: 0.7;
 }
-.btn-dangnhap {
-    color: var(--color-main);
-    cursor: pointer;
-    &:hover {
-        text-decoration: underline;
-    }
-}
+
+.btn-dangnhap,
 .btn-dangky {
     color: var(--color-main);
     cursor: pointer;
 }
+.btn-dangnhap:hover,
 .btn-dangky:hover {
     text-decoration: underline;
 }
 
-.iconNotification {
-    font-size: 22px;
-    padding: 0px 10px;
-    margin-right: 10px;
-    transition: 0.2s;
-}
-.iconNotification.active {
-    color: var(--color-main);
-}
-
-.iconNotification:hover {
-    color: var(--color-main);
-}
-.iconProfile {
-    font-size: 22px;
-    padding: 0px 10px;
-    margin-right: 10px;
-    transition: 0.2s;
-}
-.iconProfile.active {
-    color: var(--color-main);
-}
-
-.iconProfile:hover {
-    color: var(--color-main);
-}
-
-.iconRank {
-    font-size: 22px;
-    padding: 0px 10px;
-    margin-right: 10px;
-    transition: 0.2s;
-}
-.iconRank.active {
-    color: var(--color-main);
-}
-
-.iconRank:hover {
-    color: var(--color-main);
-}
-
-.action {
-    display: flex;
-    line-height: 40px;
-}
+/* Các biểu tượng trong header */
+.iconFriends,
+.iconMess,
+.iconNotification,
+.iconProfile,
+.iconRank,
 .iconAdmin {
     font-size: 22px;
     padding: 0px 10px;
     margin-right: 10px;
-    &:hover {
-        color: var(--color-main);
-    }
+    transition: 0.2s;
+    position: relative;
 }
+.iconFriends.active,
+.iconMess.active,
+.iconNotification.active,
+.iconProfile.active,
+.iconRank.active,
 .iconAdmin.active {
     color: var(--color-main);
+}
+.iconFriends:hover,
+.iconMess:hover,
+.iconNotification:hover,
+.iconProfile:hover,
+.iconRank:hover,
+.iconAdmin:hover {
+    color: var(--color-main);
+}
+
+/* Badge thông báo */
+.unread-badge,
+.new-noti {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    background: red;
+    color: white;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    text-align: center;
+}
+
+.unread-badge-count,
+.new-noti-count {
+    position: absolute;
+    top: -12px;
+    right: 3px;
+    color: white;
+    font-size: 10px;
+}
+
+.action {
+    display: flex;
+    align-items: center; /* Căn giữa các biểu tượng */
+}
+
+.action-mobi {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+}
+
+.new-noti-mobi {
+    position: absolute;
+    top: 120px;
+    right: 160px;
+    background: red;
+    color: white;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    text-align: center;
+}
+.unread-badge-mobi {
+    position: absolute;
+    top: 170px;
+    right: 160px;
+    background: red;
+    color: white;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    text-align: center;
+}
+
+/* Thêm nút menu hamburger */
+.menu-toggle {
+    display: none; /* Ẩn trên desktop */
+    font-size: 24px;
+    padding: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-top: 6px;
+    color: var(--color-main);
+}
+
+/* Menu di động */
+.mobile-menu {
+    display: none; /* Ẩn mặc định */
+    flex-direction: column;
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background: white;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.mobile-menu a {
+    padding: 10px;
+    text-decoration: none;
+    color: var(--color-main);
+    font-size: 18px;
+}
+.mobile-menu a:hover {
+    background-color: #f0f0f0;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    .action > *:not(.menu-toggle) {
+        display: none; /* Ẩn biểu tượng trong .action, chỉ giữ menu-toggle */
+    }
+    .menu-toggle {
+        display: block; /* Hiển thị nút menu trên mobile */
+    }
+    .mobile-menu.active {
+        display: flex; /* Hiển thị menu khi được kích hoạt */
+    }
+    .modal-form {
+        width: 90%; /* Thu nhỏ modal trên mobile */
+    }
+    .mobile-menu a {
+        font-size: 20px; /* Tăng kích thước chữ cho dễ nhấp */
+    }
+    .action {
+        display: flex;
+        gap: 10px; /* Giảm khoảng cách giữa các biểu tượng */
+    }
+    .mobile-menu {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 60px; /* Điều chỉnh theo chiều cao header */
+        right: 0;
+        background: white;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
 }

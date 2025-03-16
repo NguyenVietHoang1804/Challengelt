@@ -1,4 +1,4 @@
-.nav-footer{
+.nav-footer {
     margin-top: 20px;
     box-shadow: 0px -5px 6px -5px #999999;
     background-color: var(--white);
@@ -6,19 +6,25 @@
     bottom: 0;
     width: 100%;
 }
-.container{
+.container {
     display: flex;
     justify-content: space-around;
 }
 
-
-.link{
+.link {
     padding: 16.5px 40px;
     font-size: 18px;
     font-weight: 500;
     transition: 0.2s;
 }
-.link.active {
+.link-center {
+    padding: 16.5px 40px;
+    font-size: 18px;
+    font-weight: 500;
+    transition: 0.2s;
+}
+.link.active,
+.link-center.active {
     /* CSS cho lớp link khi active */
     background-color: var(--color-main);
     color: var(--white);
@@ -27,7 +33,8 @@
     border-top-left-radius: -5px;
     border-top-right-radius: -5px;
 }
-.link:hover {
+.link:hover,
+.link-center:hover {
     /* CSS cho lớp link khi active */
     background-color: var(--color-main);
     color: var(--white);
@@ -35,4 +42,19 @@
     border-bottom-left-radius: 9px;
     border-top-left-radius: -5px;
     border-top-right-radius: -5px;
+}
+
+@media (max-width: 532px) {
+    .link {
+        padding: 16.5px 20px;
+        font-size: 15px;
+    }
+    .link-center {
+        padding: 16.5px 20px;
+        font-size: 15px;
+        border-left: 1px solid rgb(209, 209, 209);
+        border-right: 1px solid rgb(209, 209, 209);
+        border-bottom-right-radius: 9px;
+        border-bottom-left-radius: 9px;
+    }
 }

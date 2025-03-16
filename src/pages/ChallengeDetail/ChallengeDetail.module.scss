@@ -1,0 +1,75 @@
+/* ChallengeDetail.module.scss */
+
+/* Hình ảnh thử thách */
+.challengeImage {
+    width: 100%;
+    height: auto;
+    max-width: 600px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    margin: 0 auto;
+    display: block;
+}
+
+/* Video người tham gia */
+.participantVideo {
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Danh sách người tham gia */
+.participantsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+/* Skeleton loading */
+.skeletonImage {
+    width: 100%;
+    height: 300px;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Điều chỉnh responsive */
+@media (max-width: 768px) {
+    .challengeImage {
+        max-width: 100%;
+    }
+    .participantsGrid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    .skeletonImage {
+        height: 200px;
+    }
+    h1 {
+        font-size: 2.5rem; /* Giảm kích thước tiêu đề */
+    }
+    h2 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .challengeImage {
+        max-width: 100%;
+    }
+    .participantsGrid {
+        grid-template-columns: 1fr; /* Một cột trên mobile */
+    }
+    .skeletonImage {
+        height: 150px;
+    }
+    h1 {
+        font-size: 1.5rem;
+    }
+    h2 {
+        font-size: 1.25rem;
+    }
+    button {
+        padding: 0.5rem 1rem; /* Đảm bảo nút dễ nhấn */
+    }
+}

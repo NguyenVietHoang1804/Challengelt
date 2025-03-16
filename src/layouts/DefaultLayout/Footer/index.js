@@ -12,14 +12,15 @@ function Footer() {
             <Container className={cx('container')}>
                 <Link
                     className={cx('link', {
-                        active: location.pathname === '/',
+                        active: location.pathname === '/home',
+                        active: location.pathname === '/'
                     })}
-                    to="/"
+                    to="/home"
                 >
                     Trang chủ
                 </Link>
                 <Link
-                    className={cx('link', {
+                    className={cx('link-center', {
                         active: location.pathname === '/explore',
                     })}
                     to="/explore"

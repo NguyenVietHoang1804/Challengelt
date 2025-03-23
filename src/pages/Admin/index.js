@@ -103,16 +103,16 @@ function Admin() {
                         createdBy: pendingChallenge.createdBy,
                         idUserCreated: pendingChallenge.idUserCreated,
                         participants: 0,
-                    }
+                    },
                 );
-    
+
                 // Xóa thử thách khỏi "pending_challenges"
                 await databases.deleteDocument('678a0e0000363ac81b93', 'pending_challenges', pendingChallenge.$id);
-    
+
                 // Cập nhật UI
                 setPendingChallenges((prev) => prev.filter((c) => c.$id !== pendingChallenge.$id));
                 setChallenges((prev) => [...prev, newChallenge]); // Sử dụng newChallenge thay vì pendingChallenge
-    
+
                 // Tạo thông báo cho người tạo thử thách
                 await databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
                     userId: pendingChallenge.idUserCreated, // ID của người tạo thử thách
@@ -120,27 +120,27 @@ function Admin() {
                     challengeId: newChallenge.$id, // ID của thử thách mới
                     createdAt: new Date().toISOString(),
                 });
-    
+
                 alert('Thử thách đã được phê duyệt và thông báo đã được gửi.');
             } catch (error) {
                 console.error('Lỗi khi phê duyệt thử thách:', error);
                 alert('Phê duyệt thử thách thất bại.');
             }
         },
-        [setPendingChallenges, setChallenges]
+        [setPendingChallenges, setChallenges],
     );
 
     const handleRejectChallenge = useCallback(
         async (pendingChallenge) => {
             if (!window.confirm('Bạn có chắc chắn muốn từ chối thử thách này?')) return;
-    
+
             try {
                 // Xóa thử thách khỏi "pending_challenges"
                 await databases.deleteDocument('678a0e0000363ac81b93', 'pending_challenges', pendingChallenge.$id);
-    
+
                 // Cập nhật UI
                 setPendingChallenges((prev) => prev.filter((c) => c.$id !== pendingChallenge.$id));
-    
+
                 // Tạo thông báo cho người tạo thử thách
                 await databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
                     userId: pendingChallenge.idUserCreated, // ID của người tạo thử thách
@@ -148,14 +148,14 @@ function Admin() {
                     challengeId: pendingChallenge.$id, // ID của thử thách bị từ chối
                     createdAt: new Date().toISOString(),
                 });
-    
+
                 alert('Thử thách đã bị từ chối và thông báo đã được gửi.');
             } catch (error) {
                 console.error('Lỗi khi từ chối thử thách:', error);
                 alert('Từ chối thử thách thất bại.');
             }
         },
-        [setPendingChallenges]
+        [setPendingChallenges],
     );
 
     const fetchUsers = useCallback(async () => {
@@ -465,9 +465,9 @@ function Admin() {
 
             {/* Menu Điều Hướng - Chỉ hiển thị khi không xem thử thách chờ phê duyệt */}
             {!showPendingChallenges && (
-                <div className="flex space-x-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:space-x-4 mb-6">
                     <button
-                        className={`px-4 py-2 rounded ${
+                        className={`px-4 py-2 mb-2 sm:mb-0 rounded ${
                             activeTab === 'users' ? 'bg-[#f86666] text-white' : 'bg-gray-200'
                         }`}
                         onClick={() => {
@@ -479,7 +479,7 @@ function Admin() {
                         Quản lý Người Dùng
                     </button>
                     <button
-                        className={`px-4 py-2 rounded ${
+                        className={`px-4 py-2 mb-2 sm:mb-0 rounded ${
                             activeTab === 'challenges' ? 'bg-[#f86666] text-white' : 'bg-gray-200'
                         }`}
                         onClick={() => {
@@ -491,7 +491,7 @@ function Admin() {
                         Quản lý Thử Thách
                     </button>
                     <button
-                        className={`px-4 py-2 rounded ${
+                        className={`px-4 py-2 mb-2 sm:mb-0 rounded ${
                             activeTab === 'videos' ? 'bg-[#f86666] text-white' : 'bg-gray-200'
                         }`}
                         onClick={() => {
@@ -508,39 +508,47 @@ function Admin() {
             {/* Quản lý Người Dùng */}
             {activeTab === 'users' && !showPendingChallenges && (
                 <div>
-                    <h2 className="text-2xl font-semibold">Quản lý người dùng</h2>
-                    <div className="flex justify-between mt-6">
-                        <label className="text-xl leading-[35px] w-[150px]">Tìm kiếm người dùng: </label>
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            placeholder="Tìm kiếm người dùng"
-                            value={searchUser}
-                            onChange={(e) => {
-                                setSearchUser(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            className="w-full p-2 border rounded mb-4"
-                        />
-                        {!!searchUser && !loading && (
-                            <button onClick={handleClear}>
-                                <FontAwesomeIcon className={cx('clear')} icon={faCircleXmark} />
-                            </button>
-                        )}
+                    <h2 className="text-2xl font-semibold mb-4 text-center">Quản lý người dùng</h2>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-4">
+                        <label className="w-full sm:w-[150px] text-lg">Tìm kiếm người dùng: </label>
+                        <div className="flex-1 relative">
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                placeholder="Tìm kiếm người dùng"
+                                value={searchUser}
+                                onChange={(e) => {
+                                    setSearchUser(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            {!!searchUser && (
+                                <button
+                                    onClick={handleClear}
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                                >
+                                    <FontAwesomeIcon icon={faCircleXmark} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                     <ul className="space-y-4 mt-2">
                         {loading ? (
                             <Skeleton className="rounded-lg" count={6} height={72} />
                         ) : (
                             getPaginatedData(users).map((user) => (
-                                <li key={user.$id} className="relative flex bg-gray-100 p-4 rounded-lg shadow">
+                                <li
+                                    key={user.$id}
+                                    className="flex flex-col sm:flex-row bg-gray-100 p-4 rounded-lg shadow relative"
+                                >
                                     <img
                                         src={
                                             user.imgUser ||
                                             'https://cloud.appwrite.io/v1/storage/buckets/678a12cf00133f89ab15/files/679f7b6c00277c0c36bd/view?project=678a0a09003d4f41cb57&mode=admin'
                                         }
                                         alt={user.displayName}
-                                        className="w-12 h-12 mt-2 mr-3 rounded-full object-cover"
+                                        className="w-12 h-12 rounded-full object-cover mb-2 sm:mb-0 sm:mr-3"
                                         loading="lazy"
                                     />
                                     <div>
@@ -582,8 +590,8 @@ function Admin() {
 
             {/* Quản lý Thử Thách */}
             {activeTab === 'challenges' && !showPendingChallenges && (
-                <div>
-                    <h2 className="text-2xl font-semibold">Quản lý thử thách</h2>
+                <div className="container mx-auto p-4 bg-white rounded-lg">
+                    <h2 className="text-2xl font-semibold mb-4 text-center">Quản lý thử thách</h2>
                     <button
                         className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
                         onClick={() => {
@@ -597,8 +605,8 @@ function Admin() {
                         <div className="mt-6 p-6 bg-white rounded-lg shadow">
                             <h2 className="text-2xl font-semibold">Chỉnh sửa thử thách</h2>
                             <div className="mt-4 space-y-4">
-                                <div className="flex">
-                                    <label className="w-[125px] leading-[36px] text-gray-700 mb-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center">
+                                    <label className="w-full sm:w-32 leading-9 text-gray-700 mb-2 sm:mb-0">
                                         Tên thử thách:{' '}
                                     </label>
                                     <input
@@ -611,8 +619,10 @@ function Admin() {
                                         placeholder="Tên thử thách"
                                     />
                                 </div>
-                                <div className="flex">
-                                    <label className="w-[125px] leading-[36px] text-gray-700 mb-2">Mô tả: </label>
+                                <div className="flex flex-col sm:flex-row sm:items-center">
+                                    <label className="w-full sm:w-32 leading-9 text-gray-700 mb-2 sm:mb-0">
+                                        Mô tả:{' '}
+                                    </label>
                                     <textarea
                                         value={editChallenge.describe}
                                         onChange={(e) =>
@@ -622,8 +632,10 @@ function Admin() {
                                         placeholder="Mô tả thử thách"
                                     />
                                 </div>
-                                <div className="flex">
-                                    <label className="w-[125px] leading-[36px] text-gray-700 mb-2">Lĩnh vực: </label>
+                                <div className="flex flex-col sm:flex-row sm:items-center">
+                                    <label className="w-full sm:w-32 leading-9 text-gray-700 mb-2 sm:mb-0">
+                                        Lĩnh vực:{' '}
+                                    </label>
                                     <select
                                         value={editChallenge.field}
                                         onChange={(e) => setEditChallenge({ ...editChallenge, field: e.target.value })}
@@ -640,8 +652,10 @@ function Admin() {
                                         <option value="Văn hóa">Văn hóa</option>
                                     </select>
                                 </div>
-                                <div className="flex">
-                                    <label className="w-[120px] leading-[36px] text-gray-700">Ảnh thử thách: </label>
+                                <div className="flex flex-col sm:flex-row sm:items-center">
+                                    <label className="w-full sm:w-32 leading-9 text-gray-700 mb-2 sm:mb-0">
+                                        Ảnh thử thách:{' '}
+                                    </label>
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -655,50 +669,57 @@ function Admin() {
                                 {previewImage && (
                                     <img src={previewImage} alt="Preview" className="w-48 h-32 mt-2 rounded" />
                                 )}
-                                <button
-                                    className="bg-green-500 text-white px-4 py-2 rounded"
-                                    onClick={handleSaveEditChallenge}
-                                >
-                                    Lưu
-                                </button>
-                                <button
-                                    className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
-                                    onClick={() => setEditChallenge(null)}
-                                >
-                                    Hủy
-                                </button>
+                                <div className="flex flex-col sm:flex-row sm:space-x-2 mt-4">
+                                    <button
+                                        className="bg-green-500 text-white px-4 py-2 rounded mb-2 sm:mb-0"
+                                        onClick={handleSaveEditChallenge}
+                                    >
+                                        Lưu
+                                    </button>
+                                    <button
+                                        className="bg-gray-500 text-white px-4 py-2 rounded mb-2 sm:mb-0"
+                                        onClick={() => setEditChallenge(null)}
+                                    >
+                                        Hủy
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ) : (
                         <div>
-                            <div className="flex justify-between mt-6">
-                                <label className="text-xl leading-[35px] w-[130px]">Tìm kiếm thử thách: </label>
-                                <input
-                                    ref={inputRef}
-                                    type="text"
-                                    placeholder="Tìm kiếm thử thách"
-                                    value={searchChallenge}
-                                    onChange={(e) => {
-                                        setSearchChallenge(e.target.value);
-                                        setCurrentPage(1);
-                                    }}
-                                    className="w-full p-2 border rounded mb-4"
-                                />
-                                {!!searchChallenge && !loading && (
-                                    <button onClick={handleClear}>
-                                        <FontAwesomeIcon className={cx('clear')} icon={faCircleXmark} />
-                                    </button>
-                                )}
+                            <div className="flex-1 mb-2 md:mb-0 md:mr-4">
+                                <label className="w-full sm:w-[150px] text-lg">Tìm kiếm thử thách: </label>
+                                <div className="relative">
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        placeholder="Tìm kiếm thử thách"
+                                        value={searchChallenge}
+                                        onChange={(e) => {
+                                            setSearchChallenge(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    {!!searchChallenge && (
+                                        <button
+                                            onClick={handleClear}
+                                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                                        >
+                                            <FontAwesomeIcon icon={faCircleXmark} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                            <div className="mb-4">
-                                <label className="block text-gray-700 font-bold mb-2">Lọc theo lĩnh vực:</label>
+                            <div className="flex-1">
+                                <label className="w-full sm:w-[150px] text-lg">Lọc theo lĩnh vực:</label>
                                 <select
                                     value={selectedField}
                                     onChange={(e) => {
                                         setSelectedField(e.target.value);
                                         setCurrentPage(1);
                                     }}
-                                    className="w-full border border-gray-300 rounded p-2"
+                                    className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="Tất cả">Tất cả</option>
                                     <option value="Thể thao">Thể thao</option>
@@ -719,48 +740,49 @@ function Admin() {
                                     getPaginatedData(filteredChallenges).map((challenge) => (
                                         <li
                                             key={challenge.$id}
-                                            className="flex relative bg-gray-100 p-4 rounded-lg shadow"
+                                            className="flex flex-col md:flex-row bg-gray-100 p-4 rounded-lg shadow"
                                         >
                                             <img
                                                 src={challenge.imgChallenge || 'https://via.placeholder.com/100'}
                                                 alt="Thử thách"
-                                                className="mr-5 w-[200px] h-[95px] object-cover rounded"
+                                                className="w-full md:w-[200px] h-[95px] object-cover rounded mb-2 md:mb-0 md:mr-4"
                                                 loading="lazy"
                                             />
-                                            <div>
+                                            <div className="flex-1">
                                                 <p className="font-bold">
                                                     <span className="font-semibold">Tên thử thách:</span>{' '}
                                                     {challenge.nameChallenge}
                                                 </p>
-                                                <p className="text-xl">
+                                                <p className="text-sm md:text-base">
                                                     <span className="font-semibold">Mô tả:</span> {challenge.describe}
                                                 </p>
-                                                <p className="text-xl">
+                                                <p className="text-sm md:text-base">
                                                     <span className="font-semibold">Lĩnh vực:</span> {challenge.field}
                                                 </p>
-                                                <p className="text-xl">
+                                                <p className="text-sm md:text-base">
                                                     <span className="font-semibold">Số người tham gia:</span>{' '}
                                                     {challenge.participants}
                                                 </p>
-                                                <p className="text-xl">
+                                                <p className="text-sm md:text-base">
                                                     <span className="font-semibold">Tác giả:</span>{' '}
                                                     {challenge.createdBy}
                                                 </p>
                                             </div>
-                                            <div className="absolute top-16 right-3">
-                                                <Link to={`/challenge/${challenge.$id}`}>
-                                                    <button className="bg-blue-500 text-white mr-2 px-4 py-2 rounded">
-                                                        Xem
-                                                    </button>
+                                            <div className="flex flex-col md:flex-row mt-2 md:mt-0 md:items-center md:space-x-2">
+                                                <Link
+                                                    className="bg-blue-500 text-white px-4 py-2 rounded mb-2 md:mb-0 text-center"
+                                                    to={`/challenge/${challenge.$id}`}
+                                                >
+                                                    <button>Xem</button>
                                                 </Link>
                                                 <button
-                                                    className="bg-yellow-500 text-white mr-2 px-4 py-2 rounded"
+                                                    className="bg-yellow-500 text-white px-4 py-2 rounded mb-2 md:mb-0"
                                                     onClick={() => handleEditChallenge(challenge)}
                                                 >
                                                     Sửa
                                                 </button>
                                                 <button
-                                                    className="bg-red-500 text-white px-4 py-2 rounded"
+                                                    className="bg-red-500 text-white px-4 py-2 rounded mb-2 md:mb-0"
                                                     onClick={() => handleDeleteChallenge(challenge)}
                                                 >
                                                     Xóa
@@ -852,26 +874,31 @@ function Admin() {
 
             {/* Quản lý Video */}
             {activeTab === 'videos' && !showPendingChallenges && (
-                <div>
-                    <h2 className="text-2xl font-semibold">Quản lý video</h2>
-                    <div className="flex justify-between mt-6">
-                        <label className="text-xl leading-[35px] w-[100px]">Tìm kiếm video: </label>
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            placeholder="Tìm kiếm video"
-                            value={searchVideo}
-                            onChange={(e) => {
-                                setSearchVideo(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            className="w-full p-2 border rounded mb-4"
-                        />
-                        {!!searchVideo && !loading && (
-                            <button onClick={handleClear}>
-                                <FontAwesomeIcon className={cx('clear')} icon={faCircleXmark} />
-                            </button>
-                        )}
+                <div className="container mx-auto p-4 bg-white rounded-lg">
+                    <h2 className="text-2xl font-semibold mb-4 text-center">Quản lý video</h2>
+                    <div className="flex flex-col sm:flex-row sm:items-center">
+                        <label className="w-full sm:w-[150px] text-lg">Tìm kiếm video: </label>
+                        <div className="relative">
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                placeholder="Nhập mô tả video"
+                                value={searchVideo}
+                                onChange={(e) => {
+                                    setSearchVideo(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            {!!searchVideo && (
+                                <button onClick={handleClear}>
+                                    <FontAwesomeIcon
+                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                                        icon={faCircleXmark}
+                                    />
+                                </button>
+                            )}
+                        </div>
                     </div>
                     <ul className="space-y-4 mt-2">
                         {loading ? (

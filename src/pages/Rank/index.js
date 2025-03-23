@@ -52,7 +52,7 @@ function Leaderboard() {
                                 <td className="p-3 border border-gray-300 font-bold">{index + 1}</td>
                                 <td className="p-3 border border-gray-300 flex items-center justify-center">
                                     <img
-                                        src={user.imgUser || 'https://via.placeholder.com/50'}
+                                        src={user.imgUser || 'https://cloud.appwrite.io/v1/storage/buckets/678a12cf00133f89ab15/files/679f7b6c00277c0c36bd/view?project=678a0a09003d4f41cb57&mode=admin'}
                                         alt="Avatar"
                                         className="w-10 h-10 rounded-full mr-2"
                                     />

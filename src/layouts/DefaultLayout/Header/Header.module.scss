@@ -141,7 +141,8 @@
 .iconNotification.active,
 .iconProfile.active,
 .iconRank.active,
-.iconAdmin.active {
+.iconAdmin.active,
+.action-mobi.active {
     color: var(--color-main);
 }
 .iconFriends:hover,
@@ -149,7 +150,8 @@
 .iconNotification:hover,
 .iconProfile:hover,
 .iconRank:hover,
-.iconAdmin:hover {
+.iconAdmin:hover
+{
     color: var(--color-main);
 }
 

@@ -10,6 +10,7 @@ import {
     faTimes,
     faTrash,
     faReply,
+    faArrowLeft,
 } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserContext } from '~/contexts/UserContext';
@@ -51,6 +52,7 @@ function Chat() {
     const [isUploadingFile, setIsUploadingFile] = useState(false);
     const [replyingTo, setReplyingTo] = useState(null);
     const [originalMessages, setOriginalMessages] = useState({});
+    const [isChatView, setIsChatView] = useState(false);
 
     const fetchUnreadCount = useCallback(
         async (userId) => {
@@ -119,7 +121,12 @@ function Chat() {
             const foundUser = users.find((u) => u.$id === userIdParam);
             if (foundUser && foundUser.$id !== selectedUser?.$id) {
                 setSelectedUser(foundUser);
+                setIsChatView(true); // Chuyển sang chế độ chat khi có user từ URL
             }
+        } else {
+            // Nếu không có user trong URL, đặt lại trạng thái
+            setSelectedUser(null);
+            setIsChatView(false);
         }
     }, [location.search, users, selectedUser?.$id]);
 
@@ -292,6 +299,7 @@ function Chat() {
             }
 
             setSelectedUser(user);
+            setIsChatView(true);
             setMessages([]);
             setOffset(0);
             setHasMore(true);
@@ -565,8 +573,12 @@ function Chat() {
     }, [messages, isLoadingInitialMessages, isLoadingMoreMessages, offset]);
 
     return (
-        <div className="container mt-6 mb-30 h-[590px] flex bg-gray-100">
-            <div className="w-1/4 bg-white p-4 border-r overflow-y-auto">
+        <div className="container mt-6 mb-30 h-screen flex flex-col md:flex-row bg-gray-100">
+            <div
+                className={`w-full md:w-1/4 bg-white p-4 border-r overflow-y-auto ${
+                    isChatView ? 'hidden md:block' : ''
+                }`}
+            >
                 <h2 className="text-lg font-bold mb-4">Danh bạ</h2>
                 {isLoadingUsers ? (
                     <p className="text-gray-500">Đang tải danh bạ...</p>
@@ -614,10 +626,18 @@ function Chat() {
                 )}
             </div>
 
-            <div className="w-3/4 flex flex-col">
-                <div className="flex items-center bg-white p-4 border-b shadow-md">
-                    {selectedUser ? (
+            <div className={`w-full md:w-3/4 flex flex-col ${isChatView ? '' : 'hidden md:flex'}`}>
+                <div className="flex sticky top-0 z-100 items-center bg-white p-4 border-b shadow-md">
+                    {isChatView && selectedUser ? (
                         <>
+                            <button
+                                className="md:hidden text-4xl pl-3 pr-3 text-gray-600 mr-2"
+                                onClick={() => {
+                                    navigate('/chat');
+                                }}
+                            >
+                                <FontAwesomeIcon icon={faArrowLeft} />
+                            </button>
                             <img
                                 src={
                                     selectedUser.imgUser ||
@@ -635,7 +655,11 @@ function Chat() {
                         <p className="text-gray-500">Chọn một cuộc trò chuyện</p>
                     )}
                 </div>
-                <div ref={messagesContainerRef} className="flex-1 p-4 overflow-y-auto bg-gray-50">
+                <div
+                    ref={messagesContainerRef}
+                    className="flex-1 p-4 overflow-y-auto bg-gray-50 mb-[120px] md:mb-[55px] md:mt-[1px]"
+                    style={{ maxHeight: 'calc(100vh - 190px)' }}
+                >
                     {isLoadingInitialMessages ? (
                         <p className="text-gray-500 text-center">Đang tải tin nhắn...</p>
                     ) : messages.length === 0 ? (
@@ -766,7 +790,7 @@ function Chat() {
                 </div>
 
                 {selectedUser && (
-                    <div className="p-4 border-t bg-white flex flex-col">
+                    <div className="p-4 border-t bg-white flex flex-col fixed bottom-[55px] w-full md:relative">
                         {replyingTo && (
                             <div className="bg-gray-200 p-2 rounded mb-2 flex justify-between items-center">
                                 <p className="text-sm text-gray-600">Đang trả lời: {replyingTo.message}</p>

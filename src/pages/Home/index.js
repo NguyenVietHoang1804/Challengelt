@@ -6,7 +6,8 @@ import { databases, Query } from '~/appwrite/config';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFlag, faPenNib, faUsers } from '@fortawesome/free-solid-svg-icons';
+import { faFlag, faPenNib, faUsers, faStar as solidStar } from '@fortawesome/free-solid-svg-icons';
+import { faStar as regularStar } from '@fortawesome/free-regular-svg-icons';
 
 const cx = classNames.bind(styles);
 
@@ -15,14 +16,12 @@ function Home() {
     const location = useLocation();
     const [challenges, setChallenges] = useState([]);
     const [currentPage, setCurrentPage] = useState(() => {
-        // Lấy giá trị page từ URL khi khởi tạo, mặc định là 1 nếu không có
         const params = new URLSearchParams(location.search);
-        const pageFromUrl = parseInt(params.get('page'), 10);
-        return pageFromUrl > 0 ? pageFromUrl : 1;
+        return parseInt(params.get('page'), 10) || 1;
     });
     const [totalPages, setTotalPages] = useState(1);
-    const limit = 6;
     const [loading, setLoading] = useState(true);
+    const limit = 6;
 
     const fetchChallenges = useCallback(async (page) => {
         setLoading(true);
@@ -33,42 +32,71 @@ function Home() {
                 Query.offset(offset),
             ]);
 
-            // Chỉ cập nhật thử thách khi dữ liệu mới đã được tải về
-            setChallenges(response.documents);
+            const challengeIds = response.documents.map((challenge) => challenge.$id);
+            const ratingsPromises = challengeIds.map((id) =>
+                databases.listDocuments('678a0e0000363ac81b93', 'ratings_collection', [
+                    Query.equal('challengeId', id),
+                ])
+            );
+
+            const ratingsResponses = await Promise.all(ratingsPromises);
+            const enrichedChallenges = response.documents.map((challenge, index) => {
+                const ratings = ratingsResponses[index].documents;
+                const averageRating = ratings.length > 0
+                    ? (ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1)
+                    : 0;
+                return { ...challenge, averageRating };
+            });
+
+            setChallenges(enrichedChallenges);
             setTotalPages(Math.ceil(response.total / limit));
         } catch (error) {
             console.error('Error fetching challenges:', error);
+            alert('Không thể tải danh sách thử thách. Vui lòng thử lại sau.');
         } finally {
             setLoading(false);
         }
     }, []);
 
-    // Cập nhật currentPage từ URL khi location.search thay đổi
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const pageFromUrl = parseInt(params.get('page'), 10) || 1;
         if (pageFromUrl !== currentPage) {
             setCurrentPage(pageFromUrl);
         }
-    }, [currentPage, location.search]);
+    }, [location.search, currentPage]);
 
-    // Gọi fetchChallenges khi currentPage thay đổi
     useEffect(() => {
         fetchChallenges(currentPage);
     }, [currentPage, fetchChallenges]);
 
-    // Chuyển trang và cập nhật URL
-    const handlePageChange = (page) => {
+    const handlePageChange = useCallback((page) => {
         if (page >= 1 && page <= totalPages && page !== currentPage) {
             setLoading(true);
             setCurrentPage(page);
             navigate(`/home?page=${page}`);
         }
-    };
+    }, [currentPage, totalPages, navigate]);
+
+    const StarDisplay = useCallback(({ rating }) => {
+        const stars = [1, 2, 3, 4, 5];
+        return (
+            <div className="flex items-center">
+                {stars.map((star) => (
+                    <FontAwesomeIcon
+                        key={star}
+                        icon={star <= rating ? solidStar : regularStar}
+                        className={star <= rating ? 'text-yellow-400' : 'text-gray-300'}
+                        size="sm"
+                    />
+                ))}
+                <span className="ml-1 text-gray-500">({rating})</span>
+            </div>
+        );
+    }, []);
 
     return (
         <div className="container mb-32">
-            {/* Hiển thị thử thách */}
             <section className={cx('mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6')}>
                 {loading
                     ? Array.from({ length: limit }).map((_, index) => (
@@ -90,29 +118,26 @@ function Home() {
                           >
                               <div className={cx('itemMobile')}>
                                   <img
-                                      className={cx(
-                                          'challengeImage',
-                                          'rounded-lg mb-4 object-cover',
-                                      )}
+                                      className={cx('challengeImage', 'rounded-lg mb-4 object-cover')}
                                       src={challenge.imgChallenge || 'https://via.placeholder.com/300x200'}
                                       alt={challenge.nameChallenge || `Thử thách ${challenge.$id}`}
                                       loading="lazy"
                                   />
                                   <div className={cx('truncate')}>
-                                      <h3 className={cx('challenge-title', ' font-bold mb-3 truncate')}>
+                                      <h3 className={cx('challenge-title', 'font-bold mb-3 truncate')}>
                                           {challenge.nameChallenge || `Thử thách ${challenge.$id}`}
                                       </h3>
-                                      <p className={cx('challenge-info', ' mb-[3px] text-gray-500')}>
-                                          <FontAwesomeIcon icon={faFlag} /> Lĩnh vực:{' '}
-                                          {challenge.field || 'Chưa xác định'}
+                                      <p className={cx('challenge-info', 'mb-[3px] text-gray-500')}>
+                                          <FontAwesomeIcon icon={faFlag} /> Lĩnh vực: {challenge.field || 'Chưa xác định'}
                                       </p>
-                                      <p className={cx(' mb-[3px] text-gray-500', 'challenge-info')}>
-                                          <FontAwesomeIcon icon={faUsers} /> Số người tham gia:{' '}
-                                          {challenge.participants || 0}
+                                      <p className={cx('challenge-info', 'mb-[3px] text-gray-500')}>
+                                          <FontAwesomeIcon icon={faUsers} /> Số người tham gia: {challenge.participants || 0}
                                       </p>
-                                      <p className={cx(' mb-[3px] text-gray-500', 'challenge-info')}>
-                                          <FontAwesomeIcon icon={faPenNib} /> Tác giả:{' '}
-                                          {challenge.createdBy || 'Không xác định'}
+                                      <p className={cx('challenge-info', 'mb-[3px] text-gray-500')}>
+                                          <FontAwesomeIcon icon={faPenNib} /> Tác giả: {challenge.createdBy || 'Không xác định'}
+                                      </p>
+                                      <p className={cx('challenge-info', 'mb-[3px] text-gray-500')}>
+                                          <StarDisplay rating={challenge.averageRating} />
                                       </p>
                                   </div>
                               </div>
@@ -120,17 +145,16 @@ function Home() {
                       ))}
             </section>
 
-            {/* Thanh phân trang */}
             <div className={cx('mt-6 space-x-2', 'pagination')}>
                 <button
-                    className="cursor-pointer px-2 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
+                    className={`px-2 py-2 rounded-md bg-gray-200 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
                     disabled={currentPage === 1}
                     onClick={() => handlePageChange(1)}
                 >
                     Đầu
                 </button>
                 <button
-                    className="cursor-pointer px-2 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
+                    className={`px-2 py-2 rounded-md bg-gray-200 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
                     disabled={currentPage === 1}
                     onClick={() => handlePageChange(currentPage - 1)}
                 >
@@ -148,14 +172,14 @@ function Home() {
                     </button>
                 ))}
                 <button
-                    className="px-2 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
+                    className={`px-2 py-2 rounded-md bg-gray-200 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
                     disabled={currentPage === totalPages}
                     onClick={() => handlePageChange(currentPage + 1)}
                 >
                     Sau
                 </button>
                 <button
-                    className="px-2 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
+                    className={`px-2 py-2 rounded-md bg-gray-200 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
                     disabled={currentPage === totalPages}
                     onClick={() => handlePageChange(totalPages)}
                 >

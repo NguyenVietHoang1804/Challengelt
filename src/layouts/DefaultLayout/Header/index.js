@@ -15,7 +15,7 @@ import {
     faXmark,
     faBars,
 } from '@fortawesome/free-solid-svg-icons';
-import { useContext, useEffect, useState, useCallback,useRef  } from 'react';
+import { useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Search from '../Search';
 import { UserContext } from '~/contexts/UserContext';
@@ -249,6 +249,13 @@ function Header() {
         };
     }, [isMenuOpen]);
 
+    const handleMenuItemClick = () => {
+        setIsMenuOpen(false);
+    };
+    useEffect(() => {
+        setIsMenuOpen(false); // Đóng menu khi đường dẫn thay đổi
+    }, [location.pathname]);
+
     const ModalForm = () => (
         <div className={cx('modal-overlay', { show: isModalOpen })}>
             <div className={cx('modal-form', { show: isModalOpen })}>
@@ -406,18 +413,18 @@ function Header() {
                         {currentUser ? (
                             <>
                                 {isAdmin && (
-                                    <Link to="/admin">
+                                    <Link to="/admin" onClick={handleMenuItemClick}>
                                         <FontAwesomeIcon className={cx('action-mobi')} icon={faScrewdriverWrench} />{' '}
                                         Admin
                                     </Link>
                                 )}
-                                <Link to="/profile">
+                                <Link to="/profile" onClick={handleMenuItemClick}>
                                     <FontAwesomeIcon className={cx('action-mobi')} icon={faCircleUser} /> Trang cá nhân
                                 </Link>
-                                <Link to="/friends">
+                                <Link to="/friends" onClick={handleMenuItemClick}>
                                     <FontAwesomeIcon className={cx('action-mobi')} icon={faUserGroup} /> Bạn bè
                                 </Link>
-                                <Link to="/chat">
+                                <Link to="/chat" onClick={handleMenuItemClick}>
                                     <FontAwesomeIcon className={cx('action-mobi')} icon={faComments} /> Nhắn tin
                                     {unreadCount > 0 && (
                                         <span className={cx('new-noti-mobi')}>
@@ -427,7 +434,7 @@ function Header() {
                                         </span>
                                     )}
                                 </Link>
-                                <Link to="/notification">
+                                <Link to="/notification" onClick={handleMenuItemClick}>
                                     <FontAwesomeIcon className={cx('action-mobi')} icon={faBell} /> Thông báo
                                     {notiCount > 0 && (
                                         <span className={cx('unread-badge-mobi')}>
@@ -437,7 +444,7 @@ function Header() {
                                         </span>
                                     )}
                                 </Link>
-                                <Link to="/rank">
+                                <Link to="/rank" onClick={handleMenuItemClick}>
                                     <FontAwesomeIcon className={cx('action-mobi')} icon={faRankingStar} /> Bảng xếp hạng
                                 </Link>
                             </>

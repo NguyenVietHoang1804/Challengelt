@@ -342,55 +342,55 @@ function Friends() {
     }
 
     return (
-        <div className="container mx-auto mt-8 mb-[90px] p-6 bg-white rounded-lg shadow flex">
-            <div className="w-1/4 bg-white p-4">
-                <div className="flex items-center justify-between mb-4">
+        <div className="container mx-auto mt-8 mb-[90px] p-6 bg-white rounded-lg shadow flex flex-col md:flex-row">
+            <div className="w-full md:w-1/4 bg-white p-4 border-b md:border-b-0 md:border-r">
+                <div className="flex items-center mb-4">
                     <h1 className="text-xl font-bold">Bạn bè</h1>
                 </div>
-                <ul>
-                    <li
-                        className={`flex items-center mb-4 cursor-pointer ${
+                <div className="flex flex-row md:block md:flex-col lg:flex-col items-center lg:items-start justify-around lg:justify-start">
+                    <div
+                        className={`text-xl flex items-center mb-4 cursor-pointer ${
                             activeTab === 'home' ? 'text-blue-500 font-semibold' : 'text-gray-600'
                         }`}
                         onClick={() => setActiveTab('home')}
                     >
-                        <FontAwesomeIcon icon={faHome} className="mr-2" />
+                        <FontAwesomeIcon icon={faHome} className="mr-2 text-xl" />
                         Trang chủ
-                    </li>
-                    <li
-                        className={`flex items-center mb-4 cursor-pointer ${
+                    </div>
+                    <div
+                        className={`text-xl flex items-center mb-4 cursor-pointer ${
                             activeTab === 'requests' ? 'text-blue-500 font-semibold' : 'text-gray-600'
                         }`}
                         onClick={() => setActiveTab('requests')}
                     >
-                        <FontAwesomeIcon icon={faUserFriends} className="mr-2" />
+                        <FontAwesomeIcon icon={faUserFriends} className="mr-2 text-xl" />
                         Lời mời kết bạn
                         {friendRequests.length > 0 && (
                             <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1">
                                 {friendRequests.length}
                             </span>
                         )}
-                    </li>
-                    <li
-                        className={`flex items-center mb-4 cursor-pointer ${
+                    </div>
+                    <div
+                        className={`text-xl flex items-center mb-4 cursor-pointer ${
                             activeTab === 'friends' ? 'text-blue-500 font-semibold' : 'text-gray-600'
                         }`}
                         onClick={() => setActiveTab('friends')}
                     >
-                        <FontAwesomeIcon icon={faUsers} className="mr-2" />
+                        <FontAwesomeIcon icon={faUsers} className="mr-2 text-xl" />
                         Tất cả bạn bè
-                    </li>
-                </ul>
+                    </div>
+                </div>
             </div>
 
-            <div className="w-3/4 p-4">
+            <div className="w-full md:w-3/4 p-4">
                 {activeTab === 'home' && (
                     <>
                         <h2 className="text-xl font-bold mb-4">Những người bạn có thể biết</h2>
                         {allUsers.length === 0 ? (
                             <p className="text-gray-500 text-center">Không có người dùng nào để kết bạn.</p>
                         ) : (
-                            <div className="grid grid-cols-5 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 {allUsers.map((user) => {
                                     const isReceivedRequest = friendRequests.some((req) => req.senderId === user.$id);
                                     return (
@@ -482,7 +482,7 @@ function Friends() {
                         {friendRequests.length === 0 ? (
                             <p className="text-gray-500 text-center">Bạn chưa có lời mời kết bạn nào.</p>
                         ) : (
-                            <div className="grid grid-cols-5 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 {friendRequests.map((request) => {
                                     const sender = usersData[request.senderId];
                                     return (
@@ -541,7 +541,7 @@ function Friends() {
                         {friends.length === 0 ? (
                             <p className="text-gray-500 text-center">Bạn chưa có bạn bè nào.</p>
                         ) : (
-                            <div className="grid grid-cols-5 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 {friends.map((friend) => {
                                     const friendData = usersData[friend.friendId];
                                     return (

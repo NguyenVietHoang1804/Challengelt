@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState, useContext } from 'react';
-import { client, databases, Query } from '~/appwrite/config';
+import { client, DATABASE_ID, databases, NOTIFICATIONS_ID, Query } from '~/appwrite/config';
 import { UserContext } from '~/contexts/UserContext';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -19,12 +19,12 @@ function Notifications() {
         const fetchNotifications = async () => {
             setLoading(true);
             try {
-                const countResponse = await databases.listDocuments('678a0e0000363ac81b93', 'notifications', [
+                const countResponse = await databases.listDocuments(DATABASE_ID, NOTIFICATIONS_ID, [
                     Query.equal('userId', userId),
                 ]);
                 setTotalPages(Math.ceil(countResponse.total / notificationsPerPage));
 
-                const response = await databases.listDocuments('678a0e0000363ac81b93', 'notifications', [
+                const response = await databases.listDocuments(DATABASE_ID, NOTIFICATIONS_ID, [
                     Query.equal('userId', userId),
                     Query.orderDesc('createdAt'),
                     Query.limit(notificationsPerPage),
@@ -41,9 +41,9 @@ function Notifications() {
         fetchNotifications();
 
         const unsubscribe = client.subscribe(
-            'databases.678a0e0000363ac81b93.collections.notifications.documents',
+            `databases.${DATABASE_ID}.collections.${NOTIFICATIONS_ID}.documents`,
             (response) => {
-                if (response.events.includes('databases.*.collections.notifications.documents.*.create')) {
+                if (response.events.includes(`databases.*.collections.${NOTIFICATIONS_ID}.documents.*.create`)) {
                     const newNotification = response.payload;
                     if (newNotification.userId === userId) {
                         setNotifications((prev) => [newNotification, ...prev]);

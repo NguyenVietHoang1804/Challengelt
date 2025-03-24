@@ -1,7 +1,6 @@
 import Home from '~/pages/Home';
 import joinChallenge from '~/pages/joinChallenge';
 import ChallengeDetail from '~/pages/ChallengeDetail';
-import Award from '~/pages/Award';
 import CreateChallenge from '~/pages/CreateChallenge';
 import Explore from '~/pages/Explore';
 import Notification from '~/pages/Notification';
@@ -19,7 +18,6 @@ const publicRoutes=[
     {path: '/home', component: Home},
     {path: '/joinChallenge/:id', component: joinChallenge},
     {path: '/challenge/:id', component: ChallengeDetail},
-    {path: '/award', component: Award},
     {path: '/createChallenge', component: CreateChallenge},
     {path: '/explore', component: Explore},
     {path: '/notification', component: Notification},

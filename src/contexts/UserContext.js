@@ -1,6 +1,6 @@
 'use client';
 import React, { createContext, useState, useEffect } from 'react';
-import { account, databases } from '~/appwrite/config';
+import { account, databases,DATABASE_ID,USERS_ID } from '~/appwrite/config';
 
 export const UserContext = createContext();
 
@@ -16,8 +16,8 @@ const UserProvider = ({ children }) => {
                 const user = await account.get();
                 setUserId(user.$id);
                 const userDocument = await databases.getDocument(
-                    '678a0e0000363ac81b93', 
-                    '678a207f00308710b3b2', 
+                    DATABASE_ID, 
+                    USERS_ID, 
                     user.$id 
                 );
                 setDisplayName(userDocument.displayName);

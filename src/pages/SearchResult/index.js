@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { databases, Query } from '~/appwrite/config';
+import { CHALLENGES_ID, DATABASE_ID, databases, DEFAULT_IMG, JOINED_CHALLENGES_ID, Query, USERS_ID } from '~/appwrite/config';
 import SearchItem from '~/components/SearchItem';
 import AccountItem from '~/components/AccountItem';
 import Skeleton from 'react-loading-skeleton';
@@ -23,7 +23,7 @@ function SearchResult() {
 
                 switch (type) {
                     case 'challenge':
-                        response = await databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', [
+                        response = await databases.listDocuments(DATABASE_ID, CHALLENGES_ID, [
                             Query.contains('nameChallenge', query),
                         ]);
                         formattedResults = response.documents.map((doc) => ({
@@ -34,7 +34,7 @@ function SearchResult() {
                         break;
 
                     case 'account':
-                        response = await databases.listDocuments('678a0e0000363ac81b93', '678a207f00308710b3b2', [
+                        response = await databases.listDocuments(DATABASE_ID, USERS_ID, [
                             Query.contains('displayName', query),
                         ]);
                         formattedResults = response.documents.map((doc) => ({
@@ -45,7 +45,7 @@ function SearchResult() {
                         break;
 
                     case 'video':
-                        response = await databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
+                        response = await databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [
                             Query.contains('describe', query),
                         ]);
 
@@ -59,8 +59,8 @@ function SearchResult() {
                                     challengeMap.set(
                                         video.challengeId,
                                         databases.getDocument(
-                                            '678a0e0000363ac81b93',
-                                            '678a0fc8000ab9bb90be',
+                                            DATABASE_ID,
+                                            CHALLENGES_ID,
                                             video.challengeId,
                                         ),
                                     );
@@ -69,8 +69,8 @@ function SearchResult() {
                                     userMap.set(
                                         video.idUserJoined,
                                         databases.getDocument(
-                                            '678a0e0000363ac81b93',
-                                            '678a207f00308710b3b2',
+                                            DATABASE_ID,
+                                            USERS_ID,
                                             video.idUserJoined,
                                         ),
                                     );
@@ -226,7 +226,7 @@ function SearchResult() {
                                         <img
                                             src={
                                                 result.data.userImg ||
-                                                'https://cloud.appwrite.io/v1/storage/buckets/678a12cf00133f89ab15/files/679f7b6c00277c0c36bd/view?project=678a0a09003d4f41cb57&mode=admin'
+                                                DEFAULT_IMG
                                             }
                                             alt="User Avatar"
                                             className="w-12 h-12 rounded-full"

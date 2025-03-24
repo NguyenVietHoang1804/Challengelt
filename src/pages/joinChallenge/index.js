@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useParams, useNavigate } from 'react-router-dom';
-import { databases, storage, ID, Query } from '~/appwrite/config';
+import { databases, storage, ID, Query, DATABASE_ID, CHALLENGES_ID, JOINED_CHALLENGES_ID, USERS_ID, BUCKET_ID, NOTIFICATIONS_ID, DEFAULT_IMG } from '~/appwrite/config';
 import { UserContext } from '~/contexts/UserContext';
 
 function JoinChallenge() {
@@ -23,9 +23,9 @@ function JoinChallenge() {
             try {
                 // Fetch challenge và check joined cùng lúc
                 const [challengeResponse, joinedResponse] = await Promise.all([
-                    databases.getDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', id),
+                    databases.getDocument(DATABASE_ID, CHALLENGES_ID, id),
                     userId
-                        ? databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
+                        ? databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [
                               Query.equal('challengeId', id),
                               Query.equal('idUserJoined', userId),
                           ])
@@ -60,9 +60,9 @@ function JoinChallenge() {
 
     const addPoints = useCallback(async (targetUserId) => {
         try {
-            const userData = await databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', targetUserId);
+            const userData = await databases.getDocument(DATABASE_ID, USERS_ID, targetUserId);
             const newPoints = (userData.points || 0) + 5;
-            await databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', targetUserId, {
+            await databases.updateDocument(DATABASE_ID, USERS_ID, targetUserId, {
                 points: newPoints,
             });
         } catch (error) {
@@ -95,12 +95,12 @@ function JoinChallenge() {
 
         try {
             // Tải video lên Storage
-            const uploadResponse = await storage.createFile('678a12cf00133f89ab15', ID.unique(), videoFile);
-            const videoURL = storage.getFileView('678a12cf00133f89ab15', uploadResponse.$id);
+            const uploadResponse = await storage.createFile(BUCKET_ID, ID.unique(), videoFile);
+            const videoURL = storage.getFileView(BUCKET_ID, uploadResponse.$id);
             const fileId = uploadResponse.$id;
 
             // Lưu thông tin tham gia
-            await databases.createDocument('678a0e0000363ac81b93', '679c498f001b467ed632', ID.unique(), {
+            await databases.createDocument(DATABASE_ID, JOINED_CHALLENGES_ID, ID.unique(), {
                 idUserJoined: userId,
                 challengeId: id,
                 userName: displayName,
@@ -111,7 +111,7 @@ function JoinChallenge() {
 
             // Cập nhật số người tham gia
             const updatedParticipants = (challenge.participants || 0) + 1;
-            const challengeData = await databases.updateDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', id, {
+            const challengeData = await databases.updateDocument(DATABASE_ID, CHALLENGES_ID, id, {
                 participants: updatedParticipants,
             });
 
@@ -123,7 +123,7 @@ function JoinChallenge() {
 
             // Gửi thông báo cho chủ thử thách
             if (challengeData.idUserCreated) {
-                await databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
+                await databases.createDocument(DATABASE_ID, NOTIFICATIONS_ID, ID.unique(), {
                     userId: challengeData.idUserCreated,
                     message: `${displayName} đã tham gia thử thách của bạn: ${challengeData.nameChallenge}. Bạn được cộng 5 điểm!`,
                     challengeId: id,
@@ -160,7 +160,7 @@ function JoinChallenge() {
                 <div>
                     <h1 className="text-6xl font-bold text-center mb-11">{challenge.nameChallenge}</h1>
                     <img
-                        src={challenge.imgChallenge || 'https://via.placeholder.com/600x300'}
+                        src={challenge.imgChallenge || DEFAULT_IMG}
                         alt={challenge.nameChallenge}
                         className="mt-4 mb-4 object-cover rounded-lg w-[600px] h-[300px]"
                         loading="lazy"

@@ -2,18 +2,11 @@
 import React, { useCallback, useEffect, useState, useContext, useRef, useMemo } from 'react';
 import Skeleton from 'react-loading-skeleton';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { databases, Query, ID, client } from '~/appwrite/config';
+import { databases, Query, ID, client,DATABASE_ID,USERS_ID,CHALLENGES_ID,JOINED_CHALLENGES_ID,FRIENDS_ID,FRIEND_REQUESTS_ID } from '~/appwrite/config';
 import { UserContext } from '~/contexts/UserContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
-// Các hằng số cấu hình Appwrite
-const DATABASE_ID = '678a0e0000363ac81b93';
-const USER_COLLECTION = '678a207f00308710b3b2';
-const CHALLENGES_CREATED_COLLECTION = '678a0fc8000ab9bb90be';
-const CHALLENGES_JOINED_COLLECTION = '679c498f001b467ed632';
-const FRIEND_REQUESTS_COLLECTION = '679c4a00001b467ed633';
-const FRIENDS_COLLECTION = '679c4a01001b467ed634';
 
 function ProfileUser() {
     const { id } = useParams();
@@ -46,28 +39,28 @@ function ProfileUser() {
                     pendingReceivedRequest,
                     friendRelation,
                 ] = await Promise.all([
-                    databases.getDocument(DATABASE_ID, USER_COLLECTION, id),
-                    databases.listDocuments(DATABASE_ID, CHALLENGES_CREATED_COLLECTION, [
+                    databases.getDocument(DATABASE_ID, USERS_ID, id),
+                    databases.listDocuments(DATABASE_ID, CHALLENGES_ID, [
                         Query.equal('idUserCreated', id),
                     ]),
-                    databases.listDocuments(DATABASE_ID, CHALLENGES_JOINED_COLLECTION, [
+                    databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [
                         Query.equal('idUserJoined', id),
                     ]),
-                    databases.listDocuments(DATABASE_ID, FRIEND_REQUESTS_COLLECTION, [
+                    databases.listDocuments(DATABASE_ID, FRIEND_REQUESTS_ID, [
                         Query.equal('receiverId', id),
                         Query.equal('status', 'pending'),
                     ]),
-                    databases.listDocuments(DATABASE_ID, FRIEND_REQUESTS_COLLECTION, [
+                    databases.listDocuments(DATABASE_ID, FRIEND_REQUESTS_ID, [
                         Query.equal('senderId', userId),
                         Query.equal('receiverId', id),
                         Query.equal('status', 'pending'),
                     ]),
-                    databases.listDocuments(DATABASE_ID, FRIEND_REQUESTS_COLLECTION, [
+                    databases.listDocuments(DATABASE_ID, FRIEND_REQUESTS_ID, [
                         Query.equal('senderId', id),
                         Query.equal('receiverId', userId),
                         Query.equal('status', 'pending'),
                     ]),
-                    databases.listDocuments(DATABASE_ID, FRIENDS_COLLECTION, [
+                    databases.listDocuments(DATABASE_ID, FRIENDS_ID, [
                         Query.or([
                             Query.and([Query.equal('userId', userId), Query.equal('friendId', id)]),
                             Query.and([Query.equal('userId', id), Query.equal('friendId', userId)]),
@@ -83,7 +76,7 @@ function ProfileUser() {
                 const joinedChallengesData = await Promise.all(
                     joinedResponse.documents.map(async ({ challengeId, videoURL, describe }) => ({
                         ...(await databases
-                            .getDocument(DATABASE_ID, CHALLENGES_CREATED_COLLECTION, challengeId)
+                            .getDocument(DATABASE_ID, CHALLENGES_ID, challengeId)
                             .catch(() => null)),
                         userVideo: videoURL,
                         userDescribe: describe,
@@ -112,8 +105,8 @@ function ProfileUser() {
         fetchUserData(true); // Tải lần đầu
         const unsubscribe = client.subscribe(
             [
-                `databases.${DATABASE_ID}.collections.${FRIEND_REQUESTS_COLLECTION}.documents`,
-                `databases.${DATABASE_ID}.collections.${FRIENDS_COLLECTION}.documents`,
+                `databases.${DATABASE_ID}.collections.${FRIEND_REQUESTS_ID}.documents`,
+                `databases.${DATABASE_ID}.collections.${FRIENDS_ID}.documents`,
             ],
             (response) => {
                 if (response.events.some((event) => event.includes('documents'))) {
@@ -137,7 +130,7 @@ function ProfileUser() {
         try {
             const response = await databases.createDocument(
                 DATABASE_ID,
-                FRIEND_REQUESTS_COLLECTION,
+                FRIEND_REQUESTS_ID,
                 ID.unique(),
                 requestData,
             );
@@ -153,7 +146,7 @@ function ProfileUser() {
     const handleCancelRequest = useCallback(async () => {
         if (!pendingRequest) return;
         try {
-            await databases.deleteDocument(DATABASE_ID, FRIEND_REQUESTS_COLLECTION, pendingRequest.$id);
+            await databases.deleteDocument(DATABASE_ID, FRIEND_REQUESTS_ID, pendingRequest.$id);
             setFriendStatus(null);
             setPendingRequest(null);
             alert('Đã hủy yêu cầu kết bạn.');
@@ -167,14 +160,14 @@ function ProfileUser() {
         if (friendStatus !== 'accepted') return;
         if (!window.confirm(`Bạn có chắc muốn hủy kết bạn với ${userData?.displayName || id}?`)) return;
         try {
-            const relations = await databases.listDocuments(DATABASE_ID, FRIENDS_COLLECTION, [
+            const relations = await databases.listDocuments(DATABASE_ID, FRIENDS_ID, [
                 Query.or([
                     Query.and([Query.equal('userId', userId), Query.equal('friendId', id)]),
                     Query.and([Query.equal('userId', id), Query.equal('friendId', userId)]),
                 ]),
             ]);
             await Promise.all(
-                relations.documents.map((doc) => databases.deleteDocument(DATABASE_ID, FRIENDS_COLLECTION, doc.$id)),
+                relations.documents.map((doc) => databases.deleteDocument(DATABASE_ID, FRIENDS_ID, doc.$id)),
             );
             setFriendStatus(null);
             alert('Đã hủy kết bạn thành công!');
@@ -187,14 +180,14 @@ function ProfileUser() {
     const handleAcceptFriend = useCallback(async () => {
         if (!pendingRequest) return;
         try {
-            await databases.deleteDocument(DATABASE_ID, FRIEND_REQUESTS_COLLECTION, pendingRequest.$id);
+            await databases.deleteDocument(DATABASE_ID, FRIEND_REQUESTS_ID, pendingRequest.$id);
             await Promise.all([
-                databases.createDocument(DATABASE_ID, FRIENDS_COLLECTION, ID.unique(), {
+                databases.createDocument(DATABASE_ID, FRIENDS_ID, ID.unique(), {
                     userId,
                     friendId: pendingRequest.senderId,
                     createdAt: new Date().toISOString(),
                 }),
-                databases.createDocument(DATABASE_ID, FRIENDS_COLLECTION, ID.unique(), {
+                databases.createDocument(DATABASE_ID, FRIENDS_ID, ID.unique(), {
                     userId: pendingRequest.senderId,
                     friendId: userId,
                     createdAt: new Date().toISOString(),
@@ -213,7 +206,7 @@ function ProfileUser() {
     const handleRejectFriend = useCallback(async () => {
         if (!pendingRequest) return;
         try {
-            await databases.deleteDocument(DATABASE_ID, FRIEND_REQUESTS_COLLECTION, pendingRequest.$id);
+            await databases.deleteDocument(DATABASE_ID, FRIEND_REQUESTS_ID, pendingRequest.$id);
             setFriendStatus(null);
             setPendingRequest(null);
             setIsDropdownOpen(false);
@@ -278,7 +271,6 @@ function ProfileUser() {
                         className="rounded-full"
                         src={userData.imgUser}
                         alt="Avatar"
-                        onError={(e) => (e.target.src = 'https://via.placeholder.com/100')}
                     />
                     <h1 className="text-5xl font-bold ml-4">{userData.displayName}</h1>
                 </div>

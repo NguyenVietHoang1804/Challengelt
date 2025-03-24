@@ -2,7 +2,7 @@ import classNames from 'classnames/bind';
 import styles from './Home.module.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { databases, Query } from '~/appwrite/config';
+import { CHALLENGES_ID, DATABASE_ID, databases, DEFAULT_IMG, Query, RATINGS_ID } from '~/appwrite/config';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -27,14 +27,14 @@ function Home() {
         setLoading(true);
         try {
             const offset = (page - 1) * limit;
-            const response = await databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', [
+            const response = await databases.listDocuments(DATABASE_ID, CHALLENGES_ID, [
                 Query.limit(limit),
                 Query.offset(offset),
             ]);
 
             const challengeIds = response.documents.map((challenge) => challenge.$id);
             const ratingsPromises = challengeIds.map((id) =>
-                databases.listDocuments('678a0e0000363ac81b93', 'ratings_collection', [
+                databases.listDocuments(DATABASE_ID, RATINGS_ID, [
                     Query.equal('challengeId', id),
                 ])
             );
@@ -119,7 +119,7 @@ function Home() {
                               <div className={cx('itemMobile')}>
                                   <img
                                       className={cx('challengeImage', 'rounded-lg mb-4 object-cover')}
-                                      src={challenge.imgChallenge || 'https://via.placeholder.com/300x200'}
+                                      src={challenge.imgChallenge || DEFAULT_IMG}
                                       alt={challenge.nameChallenge || `Thử thách ${challenge.$id}`}
                                       loading="lazy"
                                   />

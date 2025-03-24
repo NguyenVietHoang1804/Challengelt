@@ -1,6 +1,6 @@
 'use client';
 import React, { useContext, useState, useCallback, useMemo } from 'react';
-import { storage, databases } from '~/appwrite/config';
+import { storage, databases, BUCKET_ID, DATABASE_ID, PENDING_CHALLENGES_ID } from '~/appwrite/config';
 import { ID } from 'appwrite';
 import { UserContext } from '~/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
@@ -81,18 +81,18 @@ function CreateChallenge() {
                 let fileImgId = '';
                 if (image) {
                     const uploadResponse = await storage.createFile(
-                        '678a12cf00133f89ab15', // Storage Bucket ID
+                        BUCKET_ID, // Storage Bucket ID
                         ID.unique(),
                         image,
                     );
                     fileImgId = uploadResponse.$id;
-                    imageUrl = storage.getFileView('678a12cf00133f89ab15', fileImgId);
+                    imageUrl = storage.getFileView(BUCKET_ID, fileImgId);
                 }
 
                 // Gửi yêu cầu phê duyệt vào collection "pending_challenges"
                 await databases.createDocument(
-                    '678a0e0000363ac81b93', // Database ID
-                    'pending_challenges', // Thay bằng ID của collection "pending_challenges"
+                    DATABASE_ID, // Database ID
+                    PENDING_CHALLENGES_ID, // Thay bằng ID của collection "pending_challenges"
                     ID.unique(),
                     {
                         nameChallenge,

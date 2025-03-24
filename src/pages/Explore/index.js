@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState, useCallback } from 'react';
-import { databases, Query } from '~/appwrite/config';
+import { CHALLENGES_ID, DATABASE_ID, databases, DEFAULT_IMG, JOINED_CHALLENGES_ID, Query, USERS_ID } from '~/appwrite/config';
 import { Link } from 'react-router-dom';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -42,17 +42,17 @@ function Explore() {
         try {
             const [popularResponse, newestResponse, usersResponse, challengesResponse, videosResponse] =
                 await Promise.all([
-                    databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', [
+                    databases.listDocuments(DATABASE_ID, CHALLENGES_ID, [
                         Query.orderDesc('participants'),
                         Query.limit(3),
                     ]),
-                    databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', [
+                    databases.listDocuments(DATABASE_ID, CHALLENGES_ID, [
                         Query.orderDesc('$createdAt'),
                         Query.limit(3),
                     ]),
-                    databases.listDocuments('678a0e0000363ac81b93', '678a207f00308710b3b2'),
-                    databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be'),
-                    databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632'),
+                    databases.listDocuments(DATABASE_ID, USERS_ID),
+                    databases.listDocuments(DATABASE_ID, CHALLENGES_ID),
+                    databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID),
                 ]);
 
             setPopularChallenges(popularResponse.documents);
@@ -186,7 +186,7 @@ function Explore() {
                             <Link to={`/profile/${user.$id}`} key={user.$id}>
                                 <li className="py-2 px-3 flex hover:bg-gray-200 cursor-pointer rounded-lg text-[#f86666] border-top">
                                     <img
-                                        src={user.imgUser || 'https://via.placeholder.com/50'}
+                                        src={user.imgUser || DEFAULT_IMG}
                                         alt="Avatar"
                                         className="w-12 h-12 mr-[4px] rounded-full object-cover"
                                     />
@@ -265,7 +265,7 @@ function Explore() {
                                             <li className="border rounded-lg p-4 hover:shadow-lg transition-shadow duration-200">
                                                 <div className={cx('challenge-mobi')}>
                                                     <img
-                                                        src={challenge.imgChallenge || 'https://via.placeholder.com/50'}
+                                                        src={challenge.imgChallenge || DEFAULT_IMG}
                                                         alt="Avatar"
                                                         className="w-[198px] h-[100px] mb-2 object-cover"
                                                     />

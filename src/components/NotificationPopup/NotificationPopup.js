@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { client } from '~/appwrite/config';
+import { client,DATABASE_ID,MESSAGES_ID } from '~/appwrite/config';
 import { UserContext } from '~/contexts/UserContext';
 import { useContext } from 'react';
 
@@ -12,7 +12,7 @@ const NotificationPopup = ({ onChatRedirect }) => {
         if (!userId) return;
 
         const unsubscribe = client.subscribe(
-            `databases.678a0e0000363ac81b93.collections.messages.documents`,
+            `databases.${DATABASE_ID}.collections.${MESSAGES_ID}.documents`,
             (response) => {
                 if (response.events[0].includes('create') && response.payload) {
                     const { senderId, receiverId, senderName, message } = response.payload;

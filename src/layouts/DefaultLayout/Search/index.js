@@ -8,7 +8,7 @@ import classNames from 'classnames/bind';
 import styles from './Search.module.scss';
 import React , { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useDebounce } from '~/hooks';
-import { databases,Query } from '~/appwrite/config';
+import { databases,Query,DATABASE_ID,USERS_ID,CHALLENGES_ID } from '~/appwrite/config';
 import { useNavigate } from 'react-router-dom';
 
 const cx = classNames.bind(styles);
@@ -48,11 +48,11 @@ function Search() {
 
             try {
                 const [accountResponse, challengeResponse] = await Promise.all([
-                    databases.listDocuments('678a0e0000363ac81b93', '678a207f00308710b3b2', [
+                    databases.listDocuments(DATABASE_ID, USERS_ID, [
                         Query.contains('displayName', debounce),
                         Query.limit(3),
                     ]),
-                    databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', [
+                    databases.listDocuments(DATABASE_ID, CHALLENGES_ID, [
                         Query.contains('nameChallenge', debounce),
                         Query.limit(5),
                     ]),

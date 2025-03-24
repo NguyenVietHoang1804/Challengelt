@@ -1,6 +1,6 @@
 'use client';
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { databases, storage, account, Query, ID } from '~/appwrite/config';
+import { databases, storage, account, Query, ID, DATABASE_ID, USERS_ID, CHALLENGES_ID, JOINED_CHALLENGES_ID, DEFAULT_IMG, BUCKET_ID, NOTIFICATIONS_ID } from '~/appwrite/config';
 import { UserContext } from '~/contexts/UserContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -58,11 +58,11 @@ const Profile = () => {
         setLoading(true);
         if (!userId) return;
         try {
-            const userResponse = databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId);
-            const createdResponse = databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', [
+            const userResponse = databases.getDocument(DATABASE_ID, USERS_ID, userId);
+            const createdResponse = databases.listDocuments(DATABASE_ID, CHALLENGES_ID, [
                 Query.equal('idUserCreated', userId),
             ]);
-            const joinedResponse = databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
+            const joinedResponse = databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [
                 Query.equal('idUserJoined', userId),
             ]);
 
@@ -71,7 +71,7 @@ const Profile = () => {
             setCreatedChallenges(created.documents);
             const userImage =
                 user.imgUser ||
-                'https://cloud.appwrite.io/v1/storage/buckets/678a12cf00133f89ab15/files/679f7b6c00277c0c36bd/view?project=678a0a09003d4f41cb57&mode=admin';
+                DEFAULT_IMG;
             setimgUserPreview(userImage);
 
             // 🔹 Lấy thông tin thử thách từ collection "challenges" dựa trên challengeId
@@ -79,8 +79,8 @@ const Profile = () => {
                 joined.documents.map(async (entry) => {
                     try {
                         const challengeData = await databases.getDocument(
-                            '678a0e0000363ac81b93',
-                            '678a0fc8000ab9bb90be',
+                            DATABASE_ID,
+                            CHALLENGES_ID,
                             entry.challengeId,
                         );
                         return {
@@ -148,18 +148,18 @@ const Profile = () => {
             // Nếu có ảnh mới thì tải lên
             const uploadImagePromise =
                 challengeForm.imgChallenge instanceof File
-                    ? storage.createFile('678a12cf00133f89ab15', 'unique()', challengeForm.imgChallenge)
+                    ? storage.createFile(BUCKET_ID, 'unique()', challengeForm.imgChallenge)
                     : null;
 
             // Cập nhật dữ liệu thử thách song song với việc tải ảnh (nếu có)
             const [fileResponse, updatedChallenge] = await Promise.all([
                 uploadImagePromise,
-                databases.updateDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', editingChallenge.$id, {
+                databases.updateDocument(DATABASE_ID, CHALLENGES_ID, editingChallenge.$id, {
                     nameChallenge: challengeForm.nameChallenge,
                     field: challengeForm.field,
                     describe: challengeForm.describe,
                     imgChallenge: uploadImagePromise
-                        ? storage.getFileView('678a12cf00133f89ab15', (await uploadImagePromise).$id)
+                        ? storage.getFileView(BUCKET_ID, (await uploadImagePromise).$id)
                         : imgChallengeUrl,
                 }),
             ]);
@@ -192,7 +192,7 @@ const Profile = () => {
         if (!confirmDelete) return;
 
         try {
-            await databases.deleteDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', challengeId);
+            await databases.deleteDocument(DATABASE_ID, CHALLENGES_ID, challengeId);
 
             // Cập nhật UI: Xóa thử thách khỏi danh sách hiển thị
             setCreatedChallenges((prevChallenges) =>
@@ -245,8 +245,8 @@ const Profile = () => {
 
             // 🔹 Tải ảnh mới nếu có
             if (formData.imgUserFile) {
-                const fileResponse = await storage.createFile('678a12cf00133f89ab15', 'unique()', formData.imgUserFile);
-                imgUserUrl = storage.getFileView('678a12cf00133f89ab15', fileResponse.$id);
+                const fileResponse = await storage.createFile(BUCKET_ID, 'unique()', formData.imgUserFile);
+                imgUserUrl = storage.getFileView(BUCKET_ID, fileResponse.$id);
             }
 
             // 🔹 Cập nhật thông tin đồng thời để tăng tốc xử lý
@@ -255,33 +255,33 @@ const Profile = () => {
                 isChangingPassword
                     ? account.updatePassword(formData.newPassword, formData.currentPassword)
                     : Promise.resolve(), // Không đổi mật khẩu thì bỏ qua
-                databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId, {
+                databases.updateDocument(DATABASE_ID, USERS_ID, userId, {
                     displayName: formData.displayName,
                     imgUser: imgUserUrl,
                 }),
             ]);
             // 🔹 Cập nhật tên hiển thị trong bảng `joinedChallenges`
             const joinedChallengesResponse = await databases.listDocuments(
-                '678a0e0000363ac81b93',
-                '679c498f001b467ed632',
+                DATABASE_ID,
+                JOINED_CHALLENGES_ID,
                 [Query.equal('idUserJoined', userId)],
             );
 
             const updateJoinedChallenges = joinedChallengesResponse.documents.map((doc) =>
-                databases.updateDocument('678a0e0000363ac81b93', '679c498f001b467ed632', doc.$id, {
+                databases.updateDocument(DATABASE_ID, JOINED_CHALLENGES_ID, doc.$id, {
                     userName: formData.displayName,
                 }),
             );
 
             // 🔹 Cập nhật tên hiển thị trong bảng `challenges`
             const createdChallengesResponse = await databases.listDocuments(
-                '678a0e0000363ac81b93',
-                '678a0fc8000ab9bb90be',
+                DATABASE_ID,
+                CHALLENGES_ID,
                 [Query.equal('idUserCreated', userId)],
             );
 
             const updateCreatedChallenges = createdChallengesResponse.documents.map((doc) =>
-                databases.updateDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', doc.$id, {
+                databases.updateDocument(DATABASE_ID, CHALLENGES_ID, doc.$id, {
                     createdBy: formData.displayName,
                 }),
             );
@@ -314,13 +314,13 @@ const Profile = () => {
             try {
                 // 🔹 1. Xóa video khỏi Storage (nếu có)
                 const deleteFilePromise = challenge.fileId
-                    ? storage.deleteFile('678a12cf00133f89ab15', challenge.fileId)
+                    ? storage.deleteFile(BUCKET_ID, challenge.fileId)
                     : Promise.resolve();
 
                 // 🔹 2. Tìm và xóa dữ liệu tham gia thử thách
                 const joinedChallengesQuery = await databases.listDocuments(
-                    '678a0e0000363ac81b93',
-                    '679c498f001b467ed632',
+                    DATABASE_ID,
+                    JOINED_CHALLENGES_ID,
                     [Query.equal('idUserJoined', userId), Query.equal('challengeId', challenge.$id)],
                 );
 
@@ -330,16 +330,16 @@ const Profile = () => {
                     return;
                 }
                 const deleteJoinedChallengePromise = databases.deleteDocument(
-                    '678a0e0000363ac81b93',
-                    '679c498f001b467ed632',
+                    DATABASE_ID,
+                    JOINED_CHALLENGES_ID,
                     joinedChallenge.$id,
                 );
 
                 // 🔹 3. Giảm số lượng người tham gia
                 const updatedParticipants = Math.max(challenge.participants - 1, 0);
                 const updateChallengePromise = databases.updateDocument(
-                    '678a0e0000363ac81b93',
-                    '678a0fc8000ab9bb90be',
+                    DATABASE_ID,
+                    CHALLENGES_ID,
                     challenge.$id,
                     { participants: updatedParticipants },
                 );
@@ -347,19 +347,19 @@ const Profile = () => {
                 // 🔹 4. Trừ điểm của người tham gia và chủ thử thách
                 const updatePoints = async (userId) => {
                     const userData = await databases.getDocument(
-                        '678a0e0000363ac81b93',
-                        '678a207f00308710b3b2',
+                        DATABASE_ID,
+                        USERS_ID,
                         userId,
                     );
                     const newPoints = Math.max((userData.points || 0) - 5, 0);
-                    return databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId, {
+                    return databases.updateDocument(DATABASE_ID, USERS_ID, userId, {
                         points: newPoints,
                     });
                 };
 
                 const challengeData = challenge.idUserCreated
                     ? challenge
-                    : await databases.getDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', challenge.$id);
+                    : await databases.getDocument(DATABASE_ID, CHALLENGES_ID, challenge.$id);
                 const ownerId = challengeData.idUserCreated;
 
                 const updatePointsPromises = [updatePoints(userId)];
@@ -367,8 +367,8 @@ const Profile = () => {
 
                 // 🔹 5. Gửi thông báo đến chủ thử thách
                 const notificationPromise = databases.createDocument(
-                    '678a0e0000363ac81b93',
-                    'notifications',
+                    DATABASE_ID,
+                    NOTIFICATIONS_ID,
                     ID.unique(),
                     {
                         userId: ownerId,

@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { databases } from '~/appwrite/config';
+import { DATABASE_ID, databases, DEFAULT_IMG, USERS_ID } from '~/appwrite/config';
 import { Link } from 'react-router-dom';
 
 function Leaderboard() {
@@ -11,8 +11,8 @@ function Leaderboard() {
         const fetchUsers = async () => {
             try {
                 const response = await databases.listDocuments(
-                    '678a0e0000363ac81b93', // Database ID
-                    '678a207f00308710b3b2', // Collection "users"
+                    DATABASE_ID, // Database ID
+                    USERS_ID, // Collection "users"
                 );
 
                 // Lọc những người có điểm > 0 và sắp xếp giảm dần
@@ -52,7 +52,7 @@ function Leaderboard() {
                                 <td className="p-3 border border-gray-300 font-bold">{index + 1}</td>
                                 <td className="p-3 border border-gray-300 flex items-center justify-center">
                                     <img
-                                        src={user.imgUser || 'https://cloud.appwrite.io/v1/storage/buckets/678a12cf00133f89ab15/files/679f7b6c00277c0c36bd/view?project=678a0a09003d4f41cb57&mode=admin'}
+                                        src={user.imgUser || DEFAULT_IMG}
                                         alt="Avatar"
                                         className="w-10 h-10 rounded-full mr-2"
                                     />

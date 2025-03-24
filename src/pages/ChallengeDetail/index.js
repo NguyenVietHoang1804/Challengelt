@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState, useContext, useCallback, useMemo, Suspense } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { databases, Query, storage, ID } from '~/appwrite/config';
+import { databases, Query, storage, ID, DATABASE_ID, COMMENTS_ID, USERS_ID, DEFAULT_IMG, CHALLENGES_ID, JOINED_CHALLENGES_ID, RATINGS_ID, LIKES_ID, NOTIFICATIONS_ID, BUCKET_ID } from '~/appwrite/config';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faStar as solidStar, faHeart as solidHeart, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import { faStar as regularStar, faHeart as regularHeart, faComment } from '@fortawesome/free-regular-svg-icons';
@@ -28,7 +28,7 @@ const Participant = React.memo(({ participant, userId, onLike, isLiking, onComme
         setLoadingComments(true);
         try {
             const offset = (currentPage - 1) * commentsPerPage;
-            const commentsResponse = await databases.listDocuments('678a0e0000363ac81b93', 'comments_collection', [
+            const commentsResponse = await databases.listDocuments(DATABASE_ID, COMMENTS_ID, [
                 Query.equal('participantId', participant.$id),
                 Query.isNull('parentCommentId'),
                 Query.limit(commentsPerPage),
@@ -52,14 +52,14 @@ const Participant = React.memo(({ participant, userId, onLike, isLiking, onComme
     const handleSendComment = async () => {
         if (!newComment.trim()) return;
         try {
-            const userDoc = await databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId);
+            const userDoc = await databases.getDocument(DATABASE_ID, USERS_ID, userId);
             const commentData = {
                 participantId: participant.$id,
                 userId,
                 userName: userDoc.displayName || 'Người dùng',
                 profilePicture:
                     userDoc.imgUser ||
-                    'https://cloud.appwrite.io/v1/storage/buckets/678a12cf00133f89ab15/files/679f7b6c00277c0c36bd/view?project=678a0a09003d4f41cb57&mode=admin',
+                    DEFAULT_IMG,
                 commentText: newComment,
                 createdAt: new Date().toISOString(),
                 likes: 0,
@@ -67,8 +67,8 @@ const Participant = React.memo(({ participant, userId, onLike, isLiking, onComme
                 parentCommentId: null,
             };
             const response = await databases.createDocument(
-                '678a0e0000363ac81b93',
-                'comments_collection',
+                DATABASE_ID,
+                COMMENTS_ID,
                 ID.unique(),
                 commentData,
             );
@@ -85,12 +85,12 @@ const Participant = React.memo(({ participant, userId, onLike, isLiking, onComme
 
     const handleLikeComment = async (commentId) => {
         try {
-            const commentDoc = await databases.getDocument('678a0e0000363ac81b93', 'comments_collection', commentId);
+            const commentDoc = await databases.getDocument(DATABASE_ID, COMMENTS_ID, commentId);
             const likedBy = commentDoc.likedBy || [];
             const hasLiked = likedBy.includes(userId);
 
             const updatedLikedBy = hasLiked ? likedBy.filter((id) => id !== userId) : [...likedBy, userId];
-            await databases.updateDocument('678a0e0000363ac81b93', 'comments_collection', commentId, {
+            await databases.updateDocument(DATABASE_ID, COMMENTS_ID, commentId, {
                 likes: hasLiked ? commentDoc.likes - 1 : commentDoc.likes + 1,
                 likedBy: updatedLikedBy,
             });
@@ -279,14 +279,14 @@ function ChallengeDetail() {
                 setLikes(cachedData.likes);
             } else {
                 const [challengeResponse, participantsResponse, ratingsResponse, likesResponse] = await Promise.all([
-                    databases.getDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', id),
-                    databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
+                    databases.getDocument(DATABASE_ID, CHALLENGES_ID, id),
+                    databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [
                         Query.equal('challengeId', id),
                     ]),
-                    databases.listDocuments('678a0e0000363ac81b93', 'ratings_collection', [
+                    databases.listDocuments(DATABASE_ID, RATINGS_ID, [
                         Query.equal('challengeId', id),
                     ]),
-                    databases.listDocuments('678a0e0000363ac81b93', 'likes_collection', [
+                    databases.listDocuments(DATABASE_ID, LIKES_ID, [
                         Query.equal('challengeId', id),
                     ]),
                 ]);
@@ -354,7 +354,7 @@ function ChallengeDetail() {
             }
             setIsRatingLoading(true);
             try {
-                const existingRating = await databases.listDocuments('678a0e0000363ac81b93', 'ratings_collection', [
+                const existingRating = await databases.listDocuments(DATABASE_ID, RATINGS_ID, [
                     Query.equal('challengeId', id),
                     Query.equal('userId', userId),
                 ]);
@@ -362,15 +362,15 @@ function ChallengeDetail() {
                 const isNewRating = existingRating.documents.length === 0;
 
                 await (isNewRating
-                    ? databases.createDocument('678a0e0000363ac81b93', 'ratings_collection', ID.unique(), ratingData)
+                    ? databases.createDocument(DATABASE_ID, RATINGS_ID, ID.unique(), ratingData)
                     : databases.updateDocument(
-                          '678a0e0000363ac81b93',
-                          'ratings_collection',
+                          DATABASE_ID,
+                          RATINGS_ID,
                           existingRating.documents[0].$id,
                           { rating },
                       ));
 
-                const ratingsResponse = await databases.listDocuments('678a0e0000363ac81b93', 'ratings_collection', [
+                const ratingsResponse = await databases.listDocuments(DATABASE_ID, RATINGS_ID, [
                     Query.equal('challengeId', id),
                 ]);
                 const ratings = ratingsResponse.documents;
@@ -379,8 +379,8 @@ function ChallengeDetail() {
                         ? (ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1)
                         : 0;
 
-                const userDoc = await databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId);
-                await databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
+                const userDoc = await databases.getDocument(DATABASE_ID, USERS_ID, userId);
+                await databases.createDocument(DATABASE_ID, NOTIFICATIONS_ID, ID.unique(), {
                     userId: challenge.idUserCreated,
                     message: `${userDoc.displayName} đã đánh giá thử thách "${challenge.nameChallenge}" của bạn ${rating} sao! Điểm trung bình hiện tại: ${avgRating}.`,
                     challengeId: id,
@@ -410,17 +410,17 @@ function ChallengeDetail() {
             if (!participant) throw new Error('Bạn chưa tham gia thử thách này!');
 
             await Promise.all([
-                participant.fileId && storage.deleteFile('678a12cf00133f89ab15', participant.fileId),
-                databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', participant.$id),
+                participant.fileId && storage.deleteFile(BUCKET_ID, participant.fileId),
+                databases.deleteDocument(DATABASE_ID, JOINED_CHALLENGES_ID, participant.$id),
             ]);
 
             const updatedParticipants = Math.max((challenge.participants || 1) - 1, 0);
-            await databases.updateDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', id, {
+            await databases.updateDocument(DATABASE_ID, CHALLENGES_ID, id, {
                 participants: updatedParticipants,
             });
 
-            const userDoc = await databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId);
-            await databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
+            const userDoc = await databases.getDocument(DATABASE_ID, USERS_ID, userId);
+            await databases.createDocument(DATABASE_ID, NOTIFICATIONS_ID, ID.unique(), {
                 userId: challenge.idUserCreated,
                 message: `${userDoc.displayName} đã rời khỏi thử thách "${challenge.nameChallenge}".`,
                 challengeId: id,
@@ -467,32 +467,32 @@ function ChallengeDetail() {
             const performLike = async () => {
                 try {
                     if (currentLikes.likedByUser) {
-                        const likeDoc = await databases.listDocuments('678a0e0000363ac81b93', 'likes_collection', [
+                        const likeDoc = await databases.listDocuments(DATABASE_ID, LIKES_ID, [
                             Query.equal('challengeId', id),
                             Query.equal('participantId', participantId),
                             Query.equal('userId', userId),
                         ]);
                         if (likeDoc.documents.length > 0) {
                             await databases.deleteDocument(
-                                '678a0e0000363ac81b93',
-                                'likes_collection',
+                                DATABASE_ID,
+                                LIKES_ID,
                                 likeDoc.documents[0].$id,
                             );
                         }
                     } else {
                         const currentUserDoc = await databases.getDocument(
-                            '678a0e0000363ac81b93',
-                            '678a207f00308710b3b2',
+                            DATABASE_ID,
+                            USERS_ID,
                             userId,
                         );
                         await Promise.all([
-                            databases.createDocument('678a0e0000363ac81b93', 'likes_collection', ID.unique(), {
+                            databases.createDocument(DATABASE_ID, LIKES_ID, ID.unique(), {
                                 challengeId: id,
                                 participantId,
                                 userId,
                                 createdAt: new Date().toISOString(),
                             }),
-                            databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
+                            databases.createDocument(DATABASE_ID, NOTIFICATIONS_ID, ID.unique(), {
                                 userId: participantUserId,
                                 message: `${currentUserDoc.displayName} đã thả tim video của bạn trong thử thách "${challenge.nameChallenge}".`,
                                 challengeId: id,
@@ -523,11 +523,11 @@ function ChallengeDetail() {
             }
             try {
                 const currentUserDoc = await databases.getDocument(
-                    '678a0e0000363ac81b93',
-                    '678a207f00308710b3b2',
+                    DATABASE_ID,
+                    USERS_ID,
                     userId,
                 );
-                await databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
+                await databases.createDocument(DATABASE_ID, NOTIFICATIONS_ID, ID.unique(), {
                     userId: participantUserId,
                     message: `${currentUserDoc.displayName} đã bình luận trên video của bạn trong thử thách "${challenge.nameChallenge}": "${commentText}"`,
                     challengeId: id,

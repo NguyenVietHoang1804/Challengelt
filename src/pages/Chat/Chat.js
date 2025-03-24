@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { databases, ID, Query, client, storage } from '~/appwrite/config';
+import { databases, ID, Query, client, storage, DATABASE_ID, MESSAGES_ID, USERS_ID, BUCKET_ID, APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, DEFAULT_IMG } from '~/appwrite/config';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faEdit,
@@ -57,7 +57,7 @@ function Chat() {
     const fetchUnreadCount = useCallback(
         async (userId) => {
             try {
-                const response = await databases.listDocuments('678a0e0000363ac81b93', 'messages', [
+                const response = await databases.listDocuments(DATABASE_ID, MESSAGES_ID, [
                     Query.equal('receiverId', userId),
                     Query.equal('isRead', false),
                 ]);
@@ -82,8 +82,8 @@ function Chat() {
             setIsLoadingUsers(true);
             try {
                 const [usersResponse, unreadMessagesResponse] = await Promise.all([
-                    databases.listDocuments('678a0e0000363ac81b93', '678a207f00308710b3b2'),
-                    databases.listDocuments('678a0e0000363ac81b93', 'messages', [
+                    databases.listDocuments(DATABASE_ID, USERS_ID),
+                    databases.listDocuments(DATABASE_ID, MESSAGES_ID, [
                         Query.equal('receiverId', userId),
                         Query.equal('isRead', false),
                     ]),
@@ -140,7 +140,7 @@ function Chat() {
             if (replyToIds.length > 0) {
                 try {
                     const responses = await Promise.all(
-                        replyToIds.map((id) => databases.getDocument('678a0e0000363ac81b93', 'messages', id)),
+                        replyToIds.map((id) => databases.getDocument(DATABASE_ID, MESSAGES_ID, id)),
                     );
                     const originalMsgs = responses.reduce((acc, msg) => {
                         acc[msg.$id] = msg;
@@ -177,8 +177,8 @@ function Chat() {
 
             try {
                 const response = await databases.listDocuments(
-                    '678a0e0000363ac81b93',
-                    'messages',
+                    DATABASE_ID,
+                    MESSAGES_ID,
                     [
                         Query.or([
                             Query.and([Query.equal('senderId', userId), Query.equal('receiverId', selectedUser.$id)]),
@@ -234,8 +234,8 @@ function Chat() {
 
             try {
                 const response = await databases.listDocuments(
-                    '678a0e0000363ac81b93',
-                    'messages',
+                    DATABASE_ID,
+                    MESSAGES_ID,
                     [
                         Query.or([
                             Query.and([Query.equal('senderId', userId), Query.equal('receiverId', selectedUser.$id)]),
@@ -297,7 +297,6 @@ function Chat() {
             if (selectedUser && selectedUser.$id === user.$id) {
                 return;
             }
-
             setSelectedUser(user);
             setIsChatView(true);
             setMessages([]);
@@ -309,14 +308,14 @@ function Chat() {
 
             // Đánh dấu tất cả tin nhắn từ user này là đã đọc và cập nhật unreadCount
             try {
-                const unreadMessagesResponse = await databases.listDocuments('678a0e0000363ac81b93', 'messages', [
+                const unreadMessagesResponse = await databases.listDocuments(DATABASE_ID, MESSAGES_ID, [
                     Query.equal('senderId', user.$id),
                     Query.equal('receiverId', userId),
                     Query.equal('isRead', false),
                 ]);
                 await Promise.all(
                     unreadMessagesResponse.documents.map((msg) =>
-                        databases.updateDocument('678a0e0000363ac81b93', 'messages', msg.$id, { isRead: true }),
+                        databases.updateDocument(DATABASE_ID, MESSAGES_ID, msg.$id, { isRead: true }),
                     ),
                 );
 
@@ -337,7 +336,7 @@ function Chat() {
         if (!userId || !selectedUser) return;
 
         const unsubscribe = client.subscribe(
-            'databases.678a0e0000363ac81b93.collections.messages.documents',
+            `databases.${DATABASE_ID}.collections.${MESSAGES_ID}.documents`,
             (response) => {
                 const { events, payload } = response;
                 if (!payload) return;
@@ -401,14 +400,14 @@ function Chat() {
         try {
             // Tải file lên Appwrite Storage
             const response = await storage.createFile(
-                '678a12cf00133f89ab15', // Thay bằng ID của bucket bạn tạo trong Appwrite
+                BUCKET_ID, // Thay bằng ID của bucket bạn tạo trong Appwrite
                 ID.unique(),
                 file,
             );
 
             // Lấy URL của file
             const fileId = response.$id;
-            const fileUrl = `https://cloud.appwrite.io/v1/storage/buckets/678a12cf00133f89ab15/files/${response.$id}/view?project=678a0a09003d4f41cb57`;
+            const fileUrl = `${APPWRITE_ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${response.$id}/view?project=${APPWRITE_PROJECT_ID}`;
 
             // Gửi tin nhắn với URL của file
             const newMessage = {
@@ -423,7 +422,7 @@ function Chat() {
                 fileId: fileId,
             };
 
-            await databases.createDocument('678a0e0000363ac81b93', 'messages', ID.unique(), newMessage);
+            await databases.createDocument(DATABASE_ID, MESSAGES_ID, ID.unique(), newMessage);
         } catch (error) {
             console.error('Error uploading file:', error);
         } finally {
@@ -438,7 +437,7 @@ function Chat() {
 
         const fetchLatestMessages = async () => {
             try {
-                const response = await databases.listDocuments('678a0e0000363ac81b93', 'messages', [
+                const response = await databases.listDocuments(DATABASE_ID, MESSAGES_ID, [
                     Query.orderDesc('createdAt'),
                     Query.limit(100),
                 ]);
@@ -498,7 +497,7 @@ function Chat() {
         };
 
         try {
-            await databases.createDocument('678a0e0000363ac81b93', 'messages', ID.unique(), newMessage);
+            await databases.createDocument(DATABASE_ID, MESSAGES_ID, ID.unique(), newMessage);
             setMessage('');
             setReplyingTo(null); // Reset trạng thái trả lời sau khi gửi
             inputRef.current?.focus();
@@ -513,7 +512,7 @@ function Chat() {
         if (!editMessageContent.trim() || !editingMessage) return;
 
         try {
-            await databases.updateDocument('678a0e0000363ac81b93', 'messages', editingMessage.$id, {
+            await databases.updateDocument(DATABASE_ID, MESSAGES_ID, editingMessage.$id, {
                 message: editMessageContent.trim(),
             });
             setEditingMessage(null);
@@ -542,12 +541,12 @@ function Chat() {
             const message = messages.find((msg) => msg.$id === messageToDelete);
             if (message && message.fileId) {
                 // Xóa file trong Storage
-                await storage.deleteFile('678a12cf00133f89ab15', message.fileId);
+                await storage.deleteFile(BUCKET_ID, message.fileId);
                 console.log(`Deleted file ${message.fileId} from storage`);
             }
 
             // Xóa tin nhắn trong database
-            await databases.deleteDocument('678a0e0000363ac81b93', 'messages', messageToDelete);
+            await databases.deleteDocument(DATABASE_ID, MESSAGES_ID, messageToDelete);
             setIsDeleteModalOpen(false);
             setMessageToDelete(null);
         } catch (error) {
@@ -596,13 +595,10 @@ function Chat() {
                                     <img
                                         src={
                                             user.imgUser ||
-                                            'https://cloud.appwrite.io/v1/storage/buckets/678a12cf00133f89ab15/files/679f7b6c00277c0c36bd/view?project=678a0a09003d4f41cb57&mode=admin'
+                                            DEFAULT_IMG
                                         }
                                         alt={user.displayName}
                                         className="w-14 h-14 rounded-full"
-                                        onError={(e) => {
-                                            e.target.src = 'https://via.placeholder.com/56';
-                                        }}
                                     />
                                     <div className="flex-1 min-w-0">
                                         <p className="font-semibold truncate">{user.displayName}</p>
@@ -641,13 +637,10 @@ function Chat() {
                             <img
                                 src={
                                     selectedUser.imgUser ||
-                                    'https://cloud.appwrite.io/v1/storage/buckets/678a12cf00133f89ab15/files/679f7b6c00277c0c36bd/view?project=678a0a09003d4f41cb57&mode=admin'
+                                    DEFAULT_IMG
                                 }
                                 alt={selectedUser.displayName}
                                 className="w-14 h-14 rounded-full mr-2"
-                                onError={(e) => {
-                                    e.target.src = 'https://via.placeholder.com/56';
-                                }}
                             />
                             <p className="text-3xl font-bold truncate">{selectedUser.displayName}</p>
                         </>
@@ -727,9 +720,6 @@ function Chat() {
                                                             src={msg.attachmentUrl}
                                                             alt={`File đính kèm từ ${msg.senderName}`}
                                                             className="max-w-full mt-2 rounded"
-                                                            onError={(e) =>
-                                                                (e.target.src = 'https://via.placeholder.com/150')
-                                                            }
                                                         />
                                                     )}
                                                     {msg.attachmentType === 'video' && (

@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext, useCallback, useMemo } from 'react';
-import { client, databases, Query } from '~/appwrite/config';
+import { client, databases, Query,DATABASE_ID,NOTIFICATIONS_ID } from '~/appwrite/config';
 import { UserContext } from '~/contexts/UserContext';
 
 const useNotifications = () => {
@@ -10,8 +10,8 @@ const useNotifications = () => {
         if (!userId) return;
         try {
             const response = await databases.listDocuments(
-                '678a0e0000363ac81b93',
-                'notifications',
+                DATABASE_ID,
+                NOTIFICATIONS_ID,
                 [Query.equal('userId', userId), Query.orderDesc('createdAt')]
             );
             setNotifications(response.documents);
@@ -24,9 +24,9 @@ const useNotifications = () => {
         fetchNotifications();
 
         const unsubscribe = client.subscribe(
-            'databases.678a0e0000363ac81b93.collections.notifications.documents',
+            `databases.${DATABASE_ID}.collections.${NOTIFICATIONS_ID}.documents`,
             (response) => {
-                if (response.events.includes('databases.*.collections.notifications.documents.*.create')) {
+                if (response.events.includes(`databases.*.collections.${NOTIFICATIONS_ID}.documents.*.create`)) {
                     const newNotification = response.payload;
                     if (newNotification.userId === userId) {
                         setNotifications((prev) => [newNotification, ...prev]);

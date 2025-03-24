@@ -1,15 +1,12 @@
 'use client';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { databases, storage, account, Query, ID } from '~/appwrite/config';
+import { databases, storage, account, Query, ID, DATABASE_ID, CHALLENGES_ID, PENDING_CHALLENGES_ID, NOTIFICATIONS_ID, USERS_ID, JOINED_CHALLENGES_ID, BUCKET_ID } from '~/appwrite/config';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDebounce } from '~/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleXmark } from '@fortawesome/free-solid-svg-icons';
-import classNames from 'classnames/bind';
-import styles from './Admin.module.scss';
 import Skeleton from 'react-loading-skeleton';
 
-const cx = classNames.bind(styles);
 
 function Admin() {
     const [activeTab, setActiveTab] = useState('');
@@ -61,7 +58,7 @@ function Admin() {
                 debouncedSearchChallenge ? Query.contains('nameChallenge', debouncedSearchChallenge) : null,
                 Query.orderDesc('$createdAt'),
             ].filter(Boolean);
-            const response = await databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', queries);
+            const response = await databases.listDocuments(DATABASE_ID, CHALLENGES_ID, queries);
             setChallenges(response.documents);
         } catch (error) {
             console.error('Lỗi khi lấy thử thách:', error);
@@ -74,7 +71,7 @@ function Admin() {
         setLoading(true);
         setPendingChallenges([]);
         try {
-            const response = await databases.listDocuments('678a0e0000363ac81b93', 'pending_challenges', [
+            const response = await databases.listDocuments(DATABASE_ID, PENDING_CHALLENGES_ID, [
                 Query.equal('status', 'pending'),
                 Query.orderDesc('$createdAt'),
             ]);
@@ -91,8 +88,8 @@ function Admin() {
             try {
                 // Tạo thử thách mới trong collection "challenges"
                 const newChallenge = await databases.createDocument(
-                    '678a0e0000363ac81b93',
-                    '678a0fc8000ab9bb90be',
+                    DATABASE_ID,
+                    CHALLENGES_ID,
                     ID.unique(),
                     {
                         nameChallenge: pendingChallenge.nameChallenge,
@@ -107,14 +104,14 @@ function Admin() {
                 );
 
                 // Xóa thử thách khỏi "pending_challenges"
-                await databases.deleteDocument('678a0e0000363ac81b93', 'pending_challenges', pendingChallenge.$id);
+                await databases.deleteDocument(DATABASE_ID, PENDING_CHALLENGES_ID, pendingChallenge.$id);
 
                 // Cập nhật UI
                 setPendingChallenges((prev) => prev.filter((c) => c.$id !== pendingChallenge.$id));
                 setChallenges((prev) => [...prev, newChallenge]); // Sử dụng newChallenge thay vì pendingChallenge
 
                 // Tạo thông báo cho người tạo thử thách
-                await databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
+                await databases.createDocument(DATABASE_ID, NOTIFICATIONS_ID, ID.unique(), {
                     userId: pendingChallenge.idUserCreated, // ID của người tạo thử thách
                     message: `Admin đã phê duyệt thử thách của bạn: ${pendingChallenge.nameChallenge}.`,
                     challengeId: newChallenge.$id, // ID của thử thách mới
@@ -136,13 +133,13 @@ function Admin() {
 
             try {
                 // Xóa thử thách khỏi "pending_challenges"
-                await databases.deleteDocument('678a0e0000363ac81b93', 'pending_challenges', pendingChallenge.$id);
+                await databases.deleteDocument(DATABASE_ID, PENDING_CHALLENGES_ID, pendingChallenge.$id);
 
                 // Cập nhật UI
                 setPendingChallenges((prev) => prev.filter((c) => c.$id !== pendingChallenge.$id));
 
                 // Tạo thông báo cho người tạo thử thách
-                await databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
+                await databases.createDocument(DATABASE_ID, NOTIFICATIONS_ID, ID.unique(), {
                     userId: pendingChallenge.idUserCreated, // ID của người tạo thử thách
                     message: `Admin đã từ chối thử thách của bạn: ${pendingChallenge.nameChallenge}.`,
                     challengeId: pendingChallenge.$id, // ID của thử thách bị từ chối
@@ -166,7 +163,7 @@ function Admin() {
                 debouncedSearchUser ? Query.contains('displayName', debouncedSearchUser) : null,
                 Query.orderDesc('$createdAt'),
             ].filter(Boolean);
-            const response = await databases.listDocuments('678a0e0000363ac81b93', '678a207f00308710b3b2', queries);
+            const response = await databases.listDocuments(DATABASE_ID, USERS_ID, queries);
             setUsers(response.documents);
         } catch (error) {
             console.error('Lỗi khi lấy người dùng:', error);
@@ -184,8 +181,8 @@ function Admin() {
                 Query.orderDesc('$createdAt'),
             ].filter(Boolean);
             const [videosResponse, challengesResponse] = await Promise.all([
-                databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', queries),
-                databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be'),
+                databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, queries),
+                databases.listDocuments(DATABASE_ID, CHALLENGES_ID),
             ]);
             const challengesMap = Object.fromEntries(
                 challengesResponse.documents.map((challenge) => [
@@ -238,26 +235,26 @@ function Admin() {
         if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
         try {
             const [joinedChallenges, createdChallenges, userVideos] = await Promise.all([
-                databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
+                databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [
                     Query.equal('idUserJoined', userId),
                 ]),
-                databases.listDocuments('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', [
+                databases.listDocuments(DATABASE_ID, CHALLENGES_ID, [
                     Query.equal('idUserCreated', userId),
                 ]),
-                databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
+                databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [
                     Query.equal('idUserJoined', userId),
                 ]),
             ]);
 
             const updateParticipantsPromises = joinedChallenges.documents.map(async (entry) => {
                 const challengeData = await databases.getDocument(
-                    '678a0e0000363ac81b93',
-                    '678a0fc8000ab9bb90be',
+                    DATABASE_ID,
+                    CHALLENGES_ID,
                     entry.challengeId,
                 );
                 if (challengeData) {
                     const updatedParticipants = Math.max((challengeData.participants || 1) - 1, 0);
-                    return databases.updateDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', entry.challengeId, {
+                    return databases.updateDocument(DATABASE_ID, CHALLENGES_ID, entry.challengeId, {
                         participants: updatedParticipants,
                     });
                 }
@@ -265,33 +262,33 @@ function Admin() {
 
             const deleteVideoStoragePromises = [
                 ...joinedChallenges.documents.map(
-                    (entry) => entry.fileId && storage.deleteFile('678a12cf00133f89ab15', entry.fileId),
+                    (entry) => entry.fileId && storage.deleteFile(BUCKET_ID, entry.fileId),
                 ),
                 ...userVideos.documents.map(
-                    (video) => video.fileId && storage.deleteFile('678a12cf00133f89ab15', video.fileId),
+                    (video) => video.fileId && storage.deleteFile(BUCKET_ID, video.fileId),
                 ),
             ].filter(Boolean);
 
             const deleteDataPromises = [
                 ...joinedChallenges.documents.map((entry) =>
-                    databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', entry.$id),
+                    databases.deleteDocument(DATABASE_ID, JOINED_CHALLENGES_ID, entry.$id),
                 ),
                 ...userVideos.documents.map((video) =>
-                    databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', video.$id),
+                    databases.deleteDocument(DATABASE_ID, JOINED_CHALLENGES_ID, video.$id),
                 ),
             ];
 
             const deleteChallengesPromises = createdChallenges.documents.map(async (challenge) => {
-                if (challenge.fileImgId) await storage.deleteFile('678a12cf00133f89ab15', challenge.fileImgId);
-                const joinedResponse = await databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
+                if (challenge.fileImgId) await storage.deleteFile(BUCKET_ID, challenge.fileImgId);
+                const joinedResponse = await databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [
                     Query.equal('challengeId', challenge.$id),
                 ]);
                 const deleteJoinedParticipants = joinedResponse.documents.map(async (entry) => {
-                    if (entry.fileId) await storage.deleteFile('678a12cf00133f89ab15', entry.fileId);
-                    await databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', entry.$id);
+                    if (entry.fileId) await storage.deleteFile(BUCKET_ID, entry.fileId);
+                    await databases.deleteDocument(DATABASE_ID, JOINED_CHALLENGES_ID, entry.$id);
                 });
                 await Promise.all(deleteJoinedParticipants);
-                return databases.deleteDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', challenge.$id);
+                return databases.deleteDocument(DATABASE_ID, CHALLENGES_ID, challenge.$id);
             });
 
             await Promise.all([
@@ -299,7 +296,7 @@ function Admin() {
                 ...deleteVideoStoragePromises,
                 ...deleteDataPromises,
                 ...deleteChallengesPromises,
-                databases.deleteDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', userId),
+                databases.deleteDocument(DATABASE_ID, USERS_ID, userId),
             ]);
 
             setUsers((prev) => prev.filter((user) => user.$id !== userId));
@@ -318,22 +315,22 @@ function Admin() {
                 return;
             try {
                 const deleteFilePromises = challenge.fileImgId
-                    ? [storage.deleteFile('678a12cf00133f89ab15', challenge.fileImgId)]
+                    ? [storage.deleteFile(BUCKET_ID, challenge.fileImgId)]
                     : [];
-                const joinedResponse = await databases.listDocuments('678a0e0000363ac81b93', '679c498f001b467ed632', [
+                const joinedResponse = await databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [
                     Query.equal('challengeId', challenge.$id),
                 ]);
                 if (joinedResponse?.documents.length > 0) {
                     joinedResponse.documents.forEach((entry) => {
                         if (entry.fileId)
-                            deleteFilePromises.push(storage.deleteFile('678a12cf00133f89ab15', entry.fileId));
+                            deleteFilePromises.push(storage.deleteFile(BUCKET_ID, entry.fileId));
                         deleteFilePromises.push(
-                            databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', entry.$id),
+                            databases.deleteDocument(DATABASE_ID, JOINED_CHALLENGES_ID, entry.$id),
                         );
                     });
                 }
                 await Promise.allSettled(deleteFilePromises);
-                await databases.deleteDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', challenge.$id);
+                await databases.deleteDocument(DATABASE_ID, CHALLENGES_ID, challenge.$id);
                 setChallenges((prev) => prev.filter((c) => c.$id !== challenge.$id));
                 alert('Xóa thử thách và tất cả dữ liệu liên quan thành công.');
             } catch (error) {
@@ -358,17 +355,17 @@ function Admin() {
             if (editChallenge.newImage) {
                 if (editChallenge.fileImgId) {
                     try {
-                        await storage.deleteFile('678a12cf00133f89ab15', editChallenge.fileImgId);
+                        await storage.deleteFile(BUCKET_ID, editChallenge.fileImgId);
                     } catch (error) {
                         console.warn('Không tìm thấy file cũ hoặc lỗi khi xóa:', error);
                     }
                 }
                 const uploadResponse = await storage.createFile(
-                    '678a12cf00133f89ab15',
+                    BUCKET_ID,
                     ID.unique(),
                     editChallenge.newImage,
                 );
-                imageUrl = storage.getFileView('678a12cf00133f89ab15', uploadResponse.$id);
+                imageUrl = storage.getFileView(BUCKET_ID, uploadResponse.$id);
                 newFileId = uploadResponse.$id;
             }
             const updatedChallenge = {
@@ -379,8 +376,8 @@ function Admin() {
                 fileImgId: newFileId,
             };
             await databases.updateDocument(
-                '678a0e0000363ac81b93',
-                '678a0fc8000ab9bb90be',
+                DATABASE_ID,
+                CHALLENGES_ID,
                 editChallenge.$id,
                 updatedChallenge,
             );
@@ -399,35 +396,35 @@ function Admin() {
         if (!window.confirm('Bạn có chắc chắn muốn xóa video này?')) return;
         try {
             const deletePromises = [];
-            if (video.fileId) deletePromises.push(storage.deleteFile('678a12cf00133f89ab15', video.fileId));
-            deletePromises.push(databases.deleteDocument('678a0e0000363ac81b93', '679c498f001b467ed632', video.$id));
+            if (video.fileId) deletePromises.push(storage.deleteFile(BUCKET_ID, video.fileId));
+            deletePromises.push(databases.deleteDocument(DATABASE_ID, JOINED_CHALLENGES_ID, video.$id));
             const challengeData = await databases.getDocument(
-                '678a0e0000363ac81b93',
-                '678a0fc8000ab9bb90be',
+                DATABASE_ID,
+                CHALLENGES_ID,
                 video.challengeId,
             );
             const updatedParticipants = Math.max((challengeData.participants || 1) - 1, 0);
             deletePromises.push(
-                databases.updateDocument('678a0e0000363ac81b93', '678a0fc8000ab9bb90be', video.challengeId, {
+                databases.updateDocument(DATABASE_ID, CHALLENGES_ID, video.challengeId, {
                     participants: updatedParticipants,
                 }),
             );
             const [userJoined, challengeOwner] = await Promise.all([
-                databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', video.idUserJoined),
-                databases.getDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', challengeData.idUserCreated),
+                databases.getDocument(DATABASE_ID, USERS_ID, video.idUserJoined),
+                databases.getDocument(DATABASE_ID, USERS_ID, challengeData.idUserCreated),
             ]);
             deletePromises.push(
-                databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', video.idUserJoined, {
+                databases.updateDocument(DATABASE_ID, USERS_ID, video.idUserJoined, {
                     points: Math.max((userJoined.points || 5) - 5, 0),
                 }),
             );
             deletePromises.push(
-                databases.updateDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', challengeData.idUserCreated, {
+                databases.updateDocument(DATABASE_ID, USERS_ID, challengeData.idUserCreated, {
                     points: Math.max((challengeOwner.points || 5) - 5, 0),
                 }),
             );
             deletePromises.push(
-                databases.createDocument('678a0e0000363ac81b93', 'notifications', ID.unique(), {
+                databases.createDocument(DATABASE_ID, NOTIFICATIONS_ID, ID.unique(), {
                     userId: challengeData.idUserCreated,
                     message: `${video.userName} đã rời khỏi thử thách: ${challengeData.nameChallenge}. Bạn bị trừ 5 điểm!`,
                     challengeId: video.challengeId,

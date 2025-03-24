@@ -19,7 +19,7 @@ import { useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Search from '../Search';
 import { UserContext } from '~/contexts/UserContext';
-import { account, databases, client, Query } from '~/appwrite/config';
+import { account, databases, client, Query,DATABASE_ID,USERS_ID,MESSAGES_ID,NOTIFICATIONS_ID } from '~/appwrite/config';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 
@@ -95,7 +95,7 @@ function Header() {
 
         try {
             const user = await account.create('unique()', email, password, name);
-            await databases.createDocument('678a0e0000363ac81b93', '678a207f00308710b3b2', user.$id, {
+            await databases.createDocument(DATABASE_ID, USERS_ID, user.$id, {
                 displayName: name,
                 gmail: email,
             });
@@ -110,7 +110,7 @@ function Header() {
 
     const fetchUnreadCount = async (userId) => {
         try {
-            const response = await databases.listDocuments('678a0e0000363ac81b93', 'messages', [
+            const response = await databases.listDocuments(DATABASE_ID, MESSAGES_ID, [
                 Query.equal('receiverId', userId),
                 Query.equal('isRead', false),
             ]);
@@ -138,7 +138,7 @@ function Header() {
 
         // Subscription để cập nhật thời gian thực
         const unsubscribe = client.subscribe(
-            `databases.678a0e0000363ac81b93.collections.messages.documents`,
+            `databases.${DATABASE_ID}.collections.${MESSAGES_ID}.documents`,
             (response) => {
                 const payload = response.payload;
                 if (!payload) return;
@@ -165,7 +165,7 @@ function Header() {
     const fetchNotiCount = async (userId) => {
         try {
             const response = await databases.listDocuments(
-                '678a0e0000363ac81b93', // Database ID
+                DATABASE_ID, // Database ID
                 'notifications', // Collection ID
                 [
                     Query.equal('userId', userId),
@@ -187,7 +187,7 @@ function Header() {
 
         // Subscription để cập nhật thời gian thực
         const unsubscribe = client.subscribe(
-            `databases.678a0e0000363ac81b93.collections.notifications.documents`,
+            `databases.${DATABASE_ID}.collections.${NOTIFICATIONS_ID}.documents`,
             (response) => {
                 const newNotification = response.payload;
                 if (!newNotification) return;
@@ -209,14 +209,14 @@ function Header() {
         if (location.pathname === '/notification' && currentUser) {
             const markNotificationsAsRead = async () => {
                 try {
-                    const response = await databases.listDocuments('678a0e0000363ac81b93', 'notifications', [
+                    const response = await databases.listDocuments(DATABASE_ID, NOTIFICATIONS_ID, [
                         Query.equal('userId', currentUser.$id),
                         Query.equal('isRead', false),
                     ]);
                     const unreadNotifications = response.documents;
                     // Cập nhật từng thông báo thành đã đọc
                     for (const notification of unreadNotifications) {
-                        await databases.updateDocument('678a0e0000363ac81b93', 'notifications', notification.$id, {
+                        await databases.updateDocument(DATABASE_ID, NOTIFICATIONS_ID, notification.$id, {
                             isRead: true,
                         });
                     }

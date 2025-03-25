@@ -1,12 +1,24 @@
 'use client';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { databases, storage, account, Query, ID, DATABASE_ID, CHALLENGES_ID, PENDING_CHALLENGES_ID, NOTIFICATIONS_ID, USERS_ID, JOINED_CHALLENGES_ID, BUCKET_ID } from '~/appwrite/config';
+import {
+    databases,
+    storage,
+    account,
+    Query,
+    ID,
+    DATABASE_ID,
+    CHALLENGES_ID,
+    PENDING_CHALLENGES_ID,
+    NOTIFICATIONS_ID,
+    USERS_ID,
+    JOINED_CHALLENGES_ID,
+    BUCKET_ID,
+} from '~/appwrite/config';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDebounce } from '~/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleXmark } from '@fortawesome/free-solid-svg-icons';
 import Skeleton from 'react-loading-skeleton';
-
 
 function Admin() {
     const [activeTab, setActiveTab] = useState('');
@@ -87,21 +99,16 @@ function Admin() {
         async (pendingChallenge) => {
             try {
                 // Tạo thử thách mới trong collection "challenges"
-                const newChallenge = await databases.createDocument(
-                    DATABASE_ID,
-                    CHALLENGES_ID,
-                    ID.unique(),
-                    {
-                        nameChallenge: pendingChallenge.nameChallenge,
-                        describe: pendingChallenge.describe,
-                        field: pendingChallenge.field,
-                        imgChallenge: pendingChallenge.imgChallenge,
-                        fileImgId: pendingChallenge.fileImgId,
-                        createdBy: pendingChallenge.createdBy,
-                        idUserCreated: pendingChallenge.idUserCreated,
-                        participants: 0,
-                    },
-                );
+                const newChallenge = await databases.createDocument(DATABASE_ID, CHALLENGES_ID, ID.unique(), {
+                    nameChallenge: pendingChallenge.nameChallenge,
+                    describe: pendingChallenge.describe,
+                    field: pendingChallenge.field,
+                    imgChallenge: pendingChallenge.imgChallenge,
+                    fileImgId: pendingChallenge.fileImgId,
+                    createdBy: pendingChallenge.createdBy,
+                    idUserCreated: pendingChallenge.idUserCreated,
+                    participants: 0,
+                });
 
                 // Xóa thử thách khỏi "pending_challenges"
                 await databases.deleteDocument(DATABASE_ID, PENDING_CHALLENGES_ID, pendingChallenge.$id);
@@ -129,7 +136,7 @@ function Admin() {
 
     const handleRejectChallenge = useCallback(
         async (pendingChallenge) => {
-            if (!window.confirm('Bạn có chắc chắn muốn từ chối thử thách này?')) return;
+            if (!window.confirm('Bạn có chắc chắn muốn từ chối thử thách này không?')) return;
 
             try {
                 // Xóa thử thách khỏi "pending_challenges"
@@ -235,23 +242,13 @@ function Admin() {
         if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
         try {
             const [joinedChallenges, createdChallenges, userVideos] = await Promise.all([
-                databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [
-                    Query.equal('idUserJoined', userId),
-                ]),
-                databases.listDocuments(DATABASE_ID, CHALLENGES_ID, [
-                    Query.equal('idUserCreated', userId),
-                ]),
-                databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [
-                    Query.equal('idUserJoined', userId),
-                ]),
+                databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [Query.equal('idUserJoined', userId)]),
+                databases.listDocuments(DATABASE_ID, CHALLENGES_ID, [Query.equal('idUserCreated', userId)]),
+                databases.listDocuments(DATABASE_ID, JOINED_CHALLENGES_ID, [Query.equal('idUserJoined', userId)]),
             ]);
 
             const updateParticipantsPromises = joinedChallenges.documents.map(async (entry) => {
-                const challengeData = await databases.getDocument(
-                    DATABASE_ID,
-                    CHALLENGES_ID,
-                    entry.challengeId,
-                );
+                const challengeData = await databases.getDocument(DATABASE_ID, CHALLENGES_ID, entry.challengeId);
                 if (challengeData) {
                     const updatedParticipants = Math.max((challengeData.participants || 1) - 1, 0);
                     return databases.updateDocument(DATABASE_ID, CHALLENGES_ID, entry.challengeId, {
@@ -264,9 +261,7 @@ function Admin() {
                 ...joinedChallenges.documents.map(
                     (entry) => entry.fileId && storage.deleteFile(BUCKET_ID, entry.fileId),
                 ),
-                ...userVideos.documents.map(
-                    (video) => video.fileId && storage.deleteFile(BUCKET_ID, video.fileId),
-                ),
+                ...userVideos.documents.map((video) => video.fileId && storage.deleteFile(BUCKET_ID, video.fileId)),
             ].filter(Boolean);
 
             const deleteDataPromises = [
@@ -322,11 +317,8 @@ function Admin() {
                 ]);
                 if (joinedResponse?.documents.length > 0) {
                     joinedResponse.documents.forEach((entry) => {
-                        if (entry.fileId)
-                            deleteFilePromises.push(storage.deleteFile(BUCKET_ID, entry.fileId));
-                        deleteFilePromises.push(
-                            databases.deleteDocument(DATABASE_ID, JOINED_CHALLENGES_ID, entry.$id),
-                        );
+                        if (entry.fileId) deleteFilePromises.push(storage.deleteFile(BUCKET_ID, entry.fileId));
+                        deleteFilePromises.push(databases.deleteDocument(DATABASE_ID, JOINED_CHALLENGES_ID, entry.$id));
                     });
                 }
                 await Promise.allSettled(deleteFilePromises);
@@ -360,11 +352,7 @@ function Admin() {
                         console.warn('Không tìm thấy file cũ hoặc lỗi khi xóa:', error);
                     }
                 }
-                const uploadResponse = await storage.createFile(
-                    BUCKET_ID,
-                    ID.unique(),
-                    editChallenge.newImage,
-                );
+                const uploadResponse = await storage.createFile(BUCKET_ID, ID.unique(), editChallenge.newImage);
                 imageUrl = storage.getFileView(BUCKET_ID, uploadResponse.$id);
                 newFileId = uploadResponse.$id;
             }
@@ -375,12 +363,7 @@ function Admin() {
                 imgChallenge: imageUrl,
                 fileImgId: newFileId,
             };
-            await databases.updateDocument(
-                DATABASE_ID,
-                CHALLENGES_ID,
-                editChallenge.$id,
-                updatedChallenge,
-            );
+            await databases.updateDocument(DATABASE_ID, CHALLENGES_ID, editChallenge.$id, updatedChallenge);
             setChallenges((prev) => prev.map((c) => (c.$id === editChallenge.$id ? { ...c, ...updatedChallenge } : c)));
             setEditChallenge(null);
             alert('Cập nhật thử thách thành công!');
@@ -398,11 +381,7 @@ function Admin() {
             const deletePromises = [];
             if (video.fileId) deletePromises.push(storage.deleteFile(BUCKET_ID, video.fileId));
             deletePromises.push(databases.deleteDocument(DATABASE_ID, JOINED_CHALLENGES_ID, video.$id));
-            const challengeData = await databases.getDocument(
-                DATABASE_ID,
-                CHALLENGES_ID,
-                video.challengeId,
-            );
+            const challengeData = await databases.getDocument(DATABASE_ID, CHALLENGES_ID, video.challengeId);
             const updatedParticipants = Math.max((challengeData.participants || 1) - 1, 0);
             deletePromises.push(
                 databases.updateDocument(DATABASE_ID, CHALLENGES_ID, video.challengeId, {
@@ -584,7 +563,6 @@ function Admin() {
                     </div>
                 </div>
             )}
-
             {/* Quản lý Thử Thách */}
             {activeTab === 'challenges' && !showPendingChallenges && (
                 <div className="container mx-auto p-4 bg-white rounded-lg">
